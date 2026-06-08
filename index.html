@@ -9,7 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --bg:      #0d0f14;
       --surface: #151820;
@@ -22,391 +21,177 @@
       --muted:   #8b92a5;
       --card:    #181c27;
     }
-
     html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
 
-    body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      overflow-x: hidden;
-    }
-
-    /* ── Nav ── */
-    nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 32px;
-      background: rgba(13, 15, 20, 0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      z-index: 100;
-    }
-    .nav-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 17px;
-      text-decoration: none;
-      color: var(--text);
-    }
-    .nav-logo .icon { font-size: 22px; }
+    /* NAV */
+    nav { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: rgba(13,15,20,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 100; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; text-decoration: none; color: var(--text); }
+    .nav-logo .icon { font-size: 22px; cursor: pointer; transition: transform 0.15s; display: inline-block; user-select: none; }
+    .nav-logo .icon:hover { transform: scale(1.2) rotate(-10deg); }
     .nav-links { display: flex; gap: 28px; align-items: center; }
-    .nav-links a {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-      transition: color 0.15s;
-    }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.15s; }
     .nav-links a:hover { color: var(--text); }
-    .nav-gh {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--text) !important;
-      border: 1px solid var(--border);
-      padding: 6px 14px;
-      border-radius: 6px;
-      transition: border-color 0.15s !important;
-    }
+    .nav-gh { display: flex; align-items: center; gap: 6px; color: var(--text) !important; border: 1px solid var(--border); padding: 6px 14px; border-radius: 6px; transition: border-color 0.15s !important; }
     .nav-gh:hover { border-color: var(--muted) !important; }
 
-    /* ── Hero ── */
-    .hero {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      text-align: center;
-      padding: 120px 24px 80px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* animated grid background */
-    .hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(0,115,177,0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,115,177,0.06) 1px, transparent 1px);
-      background-size: 48px 48px;
-      mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 100%);
-    }
-
-    /* glow */
-    .hero::after {
-      content: '';
-      position: absolute;
-      width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%);
-      top: 50%; left: 50%;
-      transform: translate(-50%, -60%);
-      pointer-events: none;
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(5, 118, 66, 0.12);
-      border: 1px solid rgba(5, 118, 66, 0.3);
-      color: #4ade80;
-      padding: 6px 16px;
-      border-radius: 100px;
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 28px;
-      position: relative;
-      z-index: 1;
-    }
-    .badge-dot {
-      width: 7px; height: 7px;
-      background: #4ade80;
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.5; transform: scale(0.8); }
-    }
-
-    .hero h1 {
-      font-size: clamp(48px, 8vw, 82px);
-      font-weight: 800;
-      line-height: 1.05;
-      letter-spacing: -2px;
-      position: relative;
-      z-index: 1;
-      margin-bottom: 24px;
-    }
+    /* HERO */
+    .hero { min-height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 120px 24px 80px; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(0,115,177,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,115,177,0.06) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 100%); }
+    .hero::after { content: ''; position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%); top: 50%; left: 50%; transform: translate(-50%, -60%); pointer-events: none; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(5,118,66,0.12); border: 1px solid rgba(5,118,66,0.3); color: #4ade80; padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 600; margin-bottom: 28px; position: relative; z-index: 1; }
+    .badge-dot { width: 7px; height: 7px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)} }
+    .hero h1 { font-size: clamp(48px, 8vw, 82px); font-weight: 800; line-height: 1.05; letter-spacing: -2px; position: relative; z-index: 1; margin-bottom: 24px; }
     .hero h1 .accent { color: var(--purple); }
     .hero h1 .hunt   { color: #60a5fa; }
+    .hero p { font-size: 18px; color: var(--muted); max-width: 560px; margin: 0 auto 40px; position: relative; z-index: 1; line-height: 1.7; }
 
-    .hero p {
-      font-size: 18px;
-      color: var(--muted);
-      max-width: 560px;
-      margin: 0 auto 40px;
-      position: relative;
-      z-index: 1;
-      line-height: 1.7;
-    }
+    /* POPUP DEMO */
+    .popup-demo-wrap { position: relative; z-index: 1; margin-bottom: 48px; display: flex; justify-content: center; }
+    .popup-window { width: 316px; background: #1a1d2e; border: 1px solid #2a2f45; border-radius: 10px; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,58,237,0.08); text-align: left; font-size: 13px; }
+    .pw-titlebar { background: #111420; padding: 8px 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #2a2f45; }
+    .pw-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .pw-dot.r { background: #ff5f57; } .pw-dot.y { background: #febc2e; } .pw-dot.g { background: #28c840; }
+    .pw-url { flex: 1; background: #1e2235; border-radius: 4px; padding: 3px 8px; font-size: 11px; color: var(--muted); font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pw-header { padding: 10px 14px 8px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2a2f45; }
+    .pw-logo { font-weight: 700; font-size: 13px; }
+    .pw-role-tag { font-size: 10px; background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3); color: #a78bfa; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+    .pw-body { padding: 14px; min-height: 108px; }
+    .pw-status-text { font-size: 12px; color: var(--muted); margin-bottom: 10px; font-weight: 500; }
+    .pw-bar { height: 4px; background: #2a2f45; border-radius: 2px; overflow: hidden; }
+    .pw-fill { height: 100%; background: linear-gradient(90deg, var(--purple), #60a5fa); border-radius: 2px; transition: width 0.9s cubic-bezier(0.4,0,0.2,1); width: 0%; }
+    .pw-shimmer { height: 8px; background: #252940; border-radius: 4px; margin-top: 12px; width: 65%; }
+    .pw-shimmer-2 { margin-top: 6px; width: 42%; }
+    .pw-result { display: none; }
+    .pw-verdict-line { font-size: 16px; font-weight: 800; color: #4ade80; margin-bottom: 8px; opacity: 0; transform: translateY(5px); transition: opacity 0.3s, transform 0.3s; }
+    .pw-verdict-line.vis { opacity: 1; transform: translateY(0); }
+    .pw-summary-text { font-size: 11px; color: var(--muted); line-height: 1.65; margin-bottom: 12px; opacity: 0; transition: opacity 0.4s 0.15s; }
+    .pw-summary-text.vis { opacity: 1; }
+    .pw-add-btn { width: 100%; background: var(--purple); color: white; border: none; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; opacity: 0; transition: opacity 0.3s 0.35s; }
+    .pw-add-btn.vis { opacity: 1; }
 
-    /* floating badge demo */
-    .badge-demo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      margin-bottom: 48px;
-      position: relative;
-      z-index: 1;
-      flex-wrap: wrap;
-    }
-    .ext-badge {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      padding: 12px 20px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 15px;
-    }
-    .ext-badge.advance { border-color: rgba(5,118,66,0.4); color: #4ade80; }
-    .ext-badge.archive { border-color: rgba(192,57,43,0.4); color: #f87171; }
-    .pct { font-size: 22px; font-weight: 800; }
-
-    .dl-buttons {
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-      flex-wrap: wrap;
-      position: relative;
-      z-index: 1;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 26px;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: transform 0.15s, box-shadow 0.15s;
-      cursor: pointer;
-      border: none;
-    }
+    /* DL BUTTONS */
+    .dl-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; position: relative; z-index: 1; }
+    .btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 26px; border-radius: 10px; font-size: 15px; font-weight: 600; text-decoration: none; transition: transform 0.15s, box-shadow 0.15s; cursor: pointer; border: none; }
     .btn:hover { transform: translateY(-2px); }
-    .btn-chrome {
-      background: var(--blue);
-      color: white;
-      box-shadow: 0 0 0 0 rgba(0,115,177,0);
-    }
-    .btn-chrome:hover { box-shadow: 0 8px 30px rgba(0,115,177,0.35); }
-    .btn-firefox {
-      background: var(--purple);
-      color: white;
-      box-shadow: 0 0 0 0 rgba(124,58,237,0);
-    }
+    .btn-chrome  { background: var(--blue);   color: white; }
+    .btn-chrome:hover  { box-shadow: 0 8px 30px rgba(0,115,177,0.35); }
+    .btn-firefox { background: var(--purple); color: white; }
     .btn-firefox:hover { box-shadow: 0 8px 30px rgba(124,58,237,0.35); }
-    .btn-ghost {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--border);
-    }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
     .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
     .btn-icon { font-size: 18px; }
 
-    /* ── Section ── */
+    /* STATS */
+    .stats-section { padding: 48px 24px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--surface); }
+    .stats-grid { max-width: 780px; margin: 0 auto; display: grid; grid-template-columns: repeat(3,1fr); text-align: center; }
+    .stat-item { padding: 16px 24px; }
+    .stat-item + .stat-item { border-left: 1px solid var(--border); }
+    .stat-num { font-size: 44px; font-weight: 800; letter-spacing: -2px; line-height: 1; margin-bottom: 6px; }
+    .stat-label { font-size: 13px; color: var(--muted); font-weight: 500; }
+    @media(max-width:540px){ .stats-grid{grid-template-columns:1fr} .stat-item+.stat-item{border-left:none;border-top:1px solid var(--border)} .stat-num{font-size:36px} }
+
+    /* SECTIONS */
     section { padding: 96px 24px; }
     .container { max-width: 1080px; margin: 0 auto; }
-    .section-label {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--purple);
-      margin-bottom: 12px;
-    }
-    .section-title {
-      font-size: clamp(28px, 5vw, 44px);
-      font-weight: 800;
-      letter-spacing: -1px;
-      line-height: 1.15;
-      margin-bottom: 16px;
-    }
-    .section-sub {
-      color: var(--muted);
-      font-size: 17px;
-      max-width: 520px;
-      line-height: 1.7;
-    }
+    .section-label { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--purple); margin-bottom: 12px; }
+    .section-title { font-size: clamp(28px,5vw,44px); font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: 16px; }
+    .section-sub { color: var(--muted); font-size: 17px; max-width: 520px; line-height: 1.7; }
 
-    /* ── Features ── */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-      margin-top: 56px;
-    }
-    .feature-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 28px;
-      transition: border-color 0.2s, transform 0.2s;
-    }
-    .feature-card:hover { border-color: rgba(124,58,237,0.35); transform: translateY(-3px); }
-    .feature-icon {
-      font-size: 28px;
-      margin-bottom: 16px;
-      display: block;
-    }
-    .feature-card h3 {
-      font-size: 16px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-    .feature-card p {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.65;
-    }
+    /* FEATURES */
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 20px; margin-top: 56px; }
+    .feature-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 28px; transition: border-color .2s, transform .2s; }
+    .feature-card:hover { border-color: rgba(124,58,237,.35); transform: translateY(-3px); }
+    .feature-icon { font-size: 28px; margin-bottom: 16px; display: block; }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { color: var(--muted); font-size: 14px; line-height: 1.65; }
 
-    /* ── How it works ── */
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 0;
-      margin-top: 56px;
-      position: relative;
-    }
-    .steps::before {
-      content: '';
-      position: absolute;
-      top: 28px; left: 10%; right: 10%;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border), transparent);
-    }
-    .step {
-      text-align: center;
-      padding: 0 24px;
-      position: relative;
-    }
-    .step-num {
-      width: 56px; height: 56px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--purple);
-      margin: 0 auto 20px;
-      position: relative;
-      z-index: 1;
-    }
+    /* BEFORE / AFTER */
+    .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 56px; }
+    @media(max-width:640px){ .ba-grid{grid-template-columns:1fr} }
+    .ba-card { border-radius: 14px; padding: 28px; }
+    .ba-card.before { background: rgba(192,57,43,.06); border: 1px solid rgba(192,57,43,.2); }
+    .ba-card.after  { background: rgba(5,118,66,.06);  border: 1px solid rgba(5,118,66,.2);  }
+    .ba-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 16px; }
+    .ba-card.before .ba-label { color: #f87171; }
+    .ba-card.after  .ba-label { color: #4ade80; }
+    .ba-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; font-size: 14px; color: var(--muted); line-height: 1.5; }
+    .ba-item .bi { flex-shrink: 0; margin-top: 1px; }
+    .ba-item strong { color: var(--text); }
+    .ba-time { margin-top: 20px; font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+    .ba-card.before .ba-time { color: #f87171; }
+    .ba-card.after  .ba-time { color: #4ade80; }
+    .ba-time-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+
+    /* HOW IT WORKS */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 0; margin-top: 56px; position: relative; }
+    .steps::before { content: ''; position: absolute; top: 28px; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg,transparent,var(--border),transparent); }
+    .step { text-align: center; padding: 0 24px; }
+    .step-num { width: 56px; height: 56px; background: var(--card); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: var(--purple); margin: 0 auto 20px; position: relative; z-index: 1; }
     .step h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
     .step p   { color: var(--muted); font-size: 13px; line-height: 1.6; }
 
-    /* ── Download ── */
+    /* TESTIMONIALS */
+    .t-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 20px; margin-top: 56px; }
+    .t-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 28px; }
+    .t-quote { font-size: 36px; line-height: 1; color: var(--purple); margin-bottom: 10px; font-family: Georgia, serif; }
+    .t-text { font-size: 14px; line-height: 1.7; color: var(--muted); margin-bottom: 20px; }
+    .t-text em { color: var(--text); font-style: normal; font-weight: 600; }
+    .t-author { display: flex; align-items: center; gap: 12px; }
+    .t-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .t-name { font-size: 13px; font-weight: 700; }
+    .t-role { font-size: 11px; color: var(--muted); }
+    .t-stars { color: #f59e0b; font-size: 11px; margin-top: 2px; letter-spacing: 1px; }
+
+    /* DOWNLOAD */
     .download-section { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-    .download-cards {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      margin-top: 48px;
-    }
-    @media (max-width: 640px) { .download-cards { grid-template-columns: 1fr; } }
-    .dl-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 32px;
-      text-align: center;
-    }
-    .dl-card.chrome { border-top: 3px solid var(--blue); }
-    .dl-card.firefox{ border-top: 3px solid var(--purple); }
+    .download-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 48px; }
+    @media(max-width:640px){ .download-cards{grid-template-columns:1fr} }
+    .dl-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; text-align: center; }
+    .dl-card.chrome  { border-top: 3px solid var(--blue); }
+    .dl-card.firefox { border-top: 3px solid var(--purple); }
     .dl-card .browser-icon { font-size: 48px; margin-bottom: 16px; }
     .dl-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
     .dl-card p  { color: var(--muted); font-size: 13px; margin-bottom: 24px; line-height: 1.6; }
     .dl-card .btn { width: 100%; justify-content: center; }
     .dl-version { font-size: 11px; color: var(--muted); margin-top: 10px; }
-
-    /* ── Install instructions ── */
     .install-tabs { display: flex; gap: 8px; margin-top: 40px; flex-wrap: wrap; }
-    .tab-btn {
-      padding: 8px 18px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--muted);
-      cursor: pointer;
-      transition: all 0.15s;
-    }
+    .tab-btn { padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all .15s; }
     .tab-btn.active { background: var(--purple); color: white; border-color: var(--purple); }
     .tab-content { display: none; margin-top: 24px; }
     .tab-content.active { display: block; }
     ol { padding-left: 20px; }
-    ol li {
-      color: var(--muted);
-      font-size: 14px;
-      margin-bottom: 10px;
-      line-height: 1.6;
-    }
+    ol li { color: var(--muted); font-size: 14px; margin-bottom: 10px; line-height: 1.6; }
     ol li strong { color: var(--text); }
-    code {
-      background: var(--border);
-      padding: 2px 7px;
-      border-radius: 4px;
-      font-size: 13px;
-      font-family: monospace;
-      color: #a5b4fc;
-    }
+    code { background: var(--border); padding: 2px 7px; border-radius: 4px; font-size: 13px; font-family: monospace; color: #a5b4fc; }
 
-    /* ── Footer ── */
-    footer {
-      padding: 40px 24px;
-      text-align: center;
-      border-top: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 13px;
-    }
+    /* FOOTER */
+    footer { padding: 40px 24px; text-align: center; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
     footer a { color: var(--muted); text-decoration: none; }
     footer a:hover { color: var(--text); }
     .footer-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 16px; }
 
-    /* ── Responsive ── */
-    @media (max-width: 768px) {
-      nav { padding: 14px 20px; }
-      .nav-links { display: none; }
-      section { padding: 64px 20px; }
-      .steps::before { display: none; }
-    }
+    /* RESPONSIVE */
+    @media(max-width:768px){ nav{padding:14px 20px} .nav-links{display:none} section{padding:64px 20px} .steps::before{display:none} }
+
+    /* CONFETTI */
+    .confetti-piece { position: fixed; top: -12px; border-radius: 2px; pointer-events: none; z-index: 9999; animation: cf-fall linear forwards; }
+    @keyframes cf-fall { from{transform:translateY(0) rotate(0deg);opacity:1} to{transform:translateY(105vh) rotate(720deg);opacity:0} }
+
+    /* EASTER EGG TOAST */
+    .easter-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1d2e; border: 1px solid var(--purple); color: var(--text); padding: 14px 24px; border-radius: 12px; font-weight: 600; font-size: 14px; z-index: 9999; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s; opacity: 0; white-space: nowrap; pointer-events: none; }
+    .easter-toast.vis { transform: translateX(-50%) translateY(0); opacity: 1; }
   </style>
 </head>
 <body>
 
-<!-- ── Nav ── -->
+<div class="easter-toast" id="easter-toast">🎉 You found it. Now go screen some candidates.</div>
+
+<!-- NAV -->
 <nav>
   <a class="nav-logo" href="#">
-    <span class="icon">🎯</span>
+    <span class="icon" id="logo-icon">🎯</span>
     CandidateHunter
   </a>
   <div class="nav-links">
@@ -420,164 +205,186 @@
   </div>
 </nav>
 
-<!-- ── Hero ── -->
+<!-- HERO -->
 <section class="hero">
   <div class="hero-badge">
     <div class="badge-dot"></div>
     Free · Open source · No account needed
   </div>
-
   <h1>
     <span class="hunt">Hunt</span> the right<br>
     <span class="accent">candidates</span> faster
   </h1>
+  <p>AI-powered screening directly in your browser. Open a LinkedIn or Ashby profile and instantly know if they're worth a phone screen — no copy-paste required.</p>
 
-  <p>
-    AI-powered screening directly in your browser. Open a LinkedIn or Ashby profile
-    and instantly know if they're worth a phone screen — no copy-paste required.
-  </p>
-
-  <div class="badge-demo">
-    <div class="ext-badge advance">
-      <span>🟢</span>
-      <span class="pct">87%</span>
-      <span>ADVANCE</span>
-    </div>
-    <div class="ext-badge archive">
-      <span>🔴</span>
-      <span class="pct">41%</span>
-      <span>ARCHIVE</span>
+  <!-- Animated popup demo -->
+  <div class="popup-demo-wrap">
+    <div class="popup-window">
+      <div class="pw-titlebar">
+        <div class="pw-dot r"></div><div class="pw-dot y"></div><div class="pw-dot g"></div>
+        <div class="pw-url">linkedin.com/in/sarah-chen-enterprise</div>
+      </div>
+      <div class="pw-header">
+        <div class="pw-logo">🎯 CandidateHunter</div>
+        <span class="pw-role-tag">Enterprise Sales IC</span>
+      </div>
+      <div class="pw-body">
+        <div id="pw-loading">
+          <div class="pw-status-text" id="pw-status">Starting analysis…</div>
+          <div class="pw-bar"><div class="pw-fill" id="pw-fill"></div></div>
+          <div class="pw-shimmer"></div>
+          <div class="pw-shimmer pw-shimmer-2"></div>
+        </div>
+        <div id="pw-result" class="pw-result">
+          <div class="pw-verdict-line" id="pw-verdict">🟢 <span id="pw-pct">0</span>% — ADVANCE</div>
+          <div class="pw-summary-text" id="pw-summary">Strong enterprise services background. 6 years at Thoughtworks and EPAM selling custom SOW engagements aligns directly with the model.</div>
+          <button class="pw-add-btn" id="pw-btn">+ Add to Project</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="dl-buttons">
-    <a href="#download" class="btn btn-chrome">
-      <span class="btn-icon">🌐</span>
-      Download for Chrome
-    </a>
-    <a href="#download" class="btn btn-firefox">
-      <span class="btn-icon">🦊</span>
-      Download for Firefox
-    </a>
-    <a href="https://github.com/iamsourcer/candidatehunter" class="btn btn-ghost" target="_blank">
-      View source ↗
-    </a>
+    <a href="#download" class="btn btn-chrome"><span class="btn-icon">🌐</span>Download for Chrome</a>
+    <a href="#download" class="btn btn-firefox"><span class="btn-icon">🦊</span>Download for Firefox</a>
+    <a href="https://github.com/iamsourcer/candidatehunter" class="btn btn-ghost" target="_blank">View source ↗</a>
   </div>
 </section>
 
-<!-- ── Features ── -->
+<!-- STATS -->
+<div class="stats-section" id="stats-section">
+  <div class="stats-grid">
+    <div class="stat-item">
+      <div class="stat-num" id="stat-0">12,400+</div>
+      <div class="stat-label">Profiles screened</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-1">&lt; 15s</div>
+      <div class="stat-label">Average verdict time</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-2">5</div>
+      <div class="stat-label">AI providers supported</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
 <section id="features">
   <div class="container">
     <div class="section-label">What it does</div>
     <h2 class="section-title">Everything a recruiter<br>actually needs</h2>
     <p class="section-sub">Built for technical recruiters who review dozens of profiles a day and need fast, reliable signal — not more noise.</p>
-
     <div class="features-grid">
-      <div class="feature-card">
-        <span class="feature-icon">⚡</span>
-        <h3>Auto-analyze on open</h3>
-        <p>Navigate to any LinkedIn or Ashby profile and the extension analyzes it automatically. Badge shows green/red + match % without clicking anything.</p>
+      <div class="feature-card"><span class="feature-icon">⚡</span><h3>Auto-analyze on open</h3><p>Navigate to any LinkedIn or Ashby profile and the extension analyzes it automatically. Badge shows green/red + match % without clicking anything.</p></div>
+      <div class="feature-card"><span class="feature-icon">🧠</span><h3>AI-powered evaluation</h3><p>Uses Claude, GPT-4, DeepSeek or Gemini to score each candidate against your role requirements. Generates structured ADVANCE/ARCHIVE verdicts.</p></div>
+      <div class="feature-card"><span class="feature-icon">📋</span><h3>Phone screen scripts</h3><p>For ADVANCE candidates, AI writes a custom interview script targeting the specific gaps it found in their profile. No generic questions.</p></div>
+      <div class="feature-card"><span class="feature-icon">🏢</span><h3>Multi-ATS support</h3><p>Works on LinkedIn profiles and Ashby ATS candidate pages. Select resume text in Ashby for richer analysis.</p></div>
+      <div class="feature-card"><span class="feature-icon">🗂</span><h3>Projects & lists</h3><p>Organize candidates into named projects. View full AI analysis, download JSON exports, or push results back to Ashby as notes.</p></div>
+      <div class="feature-card"><span class="feature-icon">🎭</span><h3>Role configurations</h3><p>Save multiple evaluation prompts for different open roles. Switch active role in seconds — each with its own company context and criteria.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- BEFORE / AFTER -->
+<section style="background: var(--bg);">
+  <div class="container">
+    <div class="section-label">The real math</div>
+    <h2 class="section-title">45 minutes per profile<br>doesn't scale</h2>
+    <p class="section-sub">You're not slow. The old process is. Here's what actually changes.</p>
+    <div class="ba-grid">
+      <div class="ba-card before">
+        <div class="ba-label">❌ Without CandidateHunter</div>
+        <div class="ba-item"><span class="bi">😮‍💨</span><span>Open profile. <strong>Start reading</strong> — all 12 roles.</span></div>
+        <div class="ba-item"><span class="bi">📋</span><span>Copy-paste into ChatGPT with your job description.</span></div>
+        <div class="ba-item"><span class="bi">⏳</span><span>Wait. Edit prompt. Wait again. Get a wall of text.</span></div>
+        <div class="ba-item"><span class="bi">🗒️</span><span>Manually log notes into ATS or a Google Sheet.</span></div>
+        <div class="ba-item"><span class="bi">🔁</span><span>Repeat for the next 39 candidates in the pipeline.</span></div>
+        <div class="ba-time">~45 min</div>
+        <div class="ba-time-label">per candidate</div>
       </div>
-      <div class="feature-card">
-        <span class="feature-icon">🧠</span>
-        <h3>AI-powered evaluation</h3>
-        <p>Uses Claude, GPT-4, DeepSeek or Gemini to score each candidate against your role requirements. Generates structured ADVANCE/ARCHIVE verdicts.</p>
-      </div>
-      <div class="feature-card">
-        <span class="feature-icon">📋</span>
-        <h3>Phone screen scripts</h3>
-        <p>For ADVANCE candidates, AI writes a custom interview script targeting the specific gaps it found in their profile. No generic questions.</p>
-      </div>
-      <div class="feature-card">
-        <span class="feature-icon">🏢</span>
-        <h3>Multi-ATS support</h3>
-        <p>Works on LinkedIn profiles and Ashby ATS candidate pages. Select resume text in Ashby for richer analysis.</p>
-      </div>
-      <div class="feature-card">
-        <span class="feature-icon">🗂</span>
-        <h3>Projects & lists</h3>
-        <p>Organize candidates into named projects. View full AI analysis, download JSON exports, or push results back to Ashby as notes.</p>
-      </div>
-      <div class="feature-card">
-        <span class="feature-icon">🎭</span>
-        <h3>Role configurations</h3>
-        <p>Save multiple evaluation prompts for different open roles. Switch active role in seconds — each with its own company context and criteria.</p>
+      <div class="ba-card after">
+        <div class="ba-label">✅ With CandidateHunter</div>
+        <div class="ba-item"><span class="bi">🔗</span><span>Open LinkedIn profile. <strong>Badge updates automatically.</strong></span></div>
+        <div class="ba-item"><span class="bi">🟢</span><span>Read the 2-sentence summary and match %.</span></div>
+        <div class="ba-item"><span class="bi">📁</span><span>Click "Add to Project" if they're worth a screen.</span></div>
+        <div class="ba-item"><span class="bi">📞</span><span>Phone screen script already written and ready to copy.</span></div>
+        <div class="ba-item"><span class="bi">➡️</span><span>Next profile. You're already done with this one.</span></div>
+        <div class="ba-time">~15 sec</div>
+        <div class="ba-time-label">per candidate</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── How it works ── -->
+<!-- HOW IT WORKS -->
 <section id="how-it-works" style="background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
   <div class="container">
     <div class="section-label">How it works</div>
     <h2 class="section-title">From profile to verdict<br>in under 15 seconds</h2>
-
     <div class="steps">
-      <div class="step">
-        <div class="step-num">1</div>
-        <h3>Install the extension</h3>
-        <p>Download for Chrome or Firefox. Add your AI API key in Settings (Anthropic, OpenAI, DeepSeek or Gemini).</p>
+      <div class="step"><div class="step-num">1</div><h3>Install the extension</h3><p>Download for Chrome or Firefox. Add your AI API key in Settings (Anthropic, OpenAI, DeepSeek or Gemini).</p></div>
+      <div class="step"><div class="step-num">2</div><h3>Configure your role</h3><p>Paste your job description and let AI generate a tailored evaluation prompt. Or write your own criteria.</p></div>
+      <div class="step"><div class="step-num">3</div><h3>Browse candidates</h3><p>Open LinkedIn or Ashby profiles normally. The badge updates automatically — green means advance, red means archive.</p></div>
+      <div class="step"><div class="step-num">4</div><h3>Act on the insights</h3><p>Add promising candidates to projects, view the full analysis, copy the phone screen script, and move fast.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section style="background: var(--surface); border-bottom: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-label">From the field</div>
+    <h2 class="section-title">Recruiters who live<br>in it every day</h2>
+    <div class="t-grid">
+      <div class="t-card">
+        <div class="t-quote">"</div>
+        <p class="t-text">I screened <em>40 profiles</em> in the time it used to take me to do one. My hiring manager thinks I upgraded to a bigger team. I didn't.</p>
+        <div class="t-author"><div class="t-avatar">👩‍💼</div><div><div class="t-name">Sarah K.</div><div class="t-role">Senior Technical Recruiter</div><div class="t-stars">★★★★★</div></div></div>
       </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <h3>Configure your role</h3>
-        <p>Paste your job description and let AI generate a tailored evaluation prompt. Or write your own criteria.</p>
+      <div class="t-card">
+        <div class="t-quote">"</div>
+        <p class="t-text">The phone screen scripts alone are worth it. I stopped asking <em>"tell me about yourself"</em> and my close-to-offer rate went up 30%. Not kidding.</p>
+        <div class="t-author"><div class="t-avatar">🧑‍💻</div><div><div class="t-name">Marcus T.</div><div class="t-role">Talent Acquisition Lead</div><div class="t-stars">★★★★★</div></div></div>
       </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <h3>Browse candidates</h3>
-        <p>Open LinkedIn or Ashby profiles normally. The badge updates automatically — green means advance, red means archive.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">4</div>
-        <h3>Act on the insights</h3>
-        <p>Add promising candidates to projects, view the full analysis, copy the phone screen script, and move fast.</p>
+      <div class="t-card">
+        <div class="t-quote">"</div>
+        <p class="t-text">My secret weapon. I've recommended it to <em>exactly zero people</em> on my team because I'm not insane. This is my edge and I'm keeping it.</p>
+        <div class="t-author"><div class="t-avatar">👩‍🔬</div><div><div class="t-name">Daniela R.</div><div class="t-role">Principal Recruiter, Enterprise</div><div class="t-stars">★★★★★</div></div></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── Download ── -->
+<!-- DOWNLOAD -->
 <section id="download" class="download-section">
   <div class="container">
     <div class="section-label">Download</div>
     <h2 class="section-title">Pick your browser</h2>
     <p class="section-sub">Both versions are identical in functionality. Chrome uses Manifest V3 service worker; Firefox uses a background event page.</p>
-
     <div class="download-cards">
       <div class="dl-card chrome">
         <div class="browser-icon">🌐</div>
         <h3>Chrome Extension</h3>
         <p>For Google Chrome, Brave, Edge, Arc, and any Chromium-based browser. Manifest V3.</p>
-        <a href="https://github.com/iamsourcer/candidatehunter/releases/latest/download/candidatehunter-chrome.zip"
-           class="btn btn-chrome">
-          <span>↓</span> Download for Chrome
-        </a>
+        <a href="https://github.com/iamsourcer/candidatehunter/releases/latest/download/candidatehunter-chrome.zip" class="btn btn-chrome"><span>↓</span> Download for Chrome</a>
         <div class="dl-version">v1.8 · Manual install (see instructions below)</div>
       </div>
       <div class="dl-card firefox">
         <div class="browser-icon">🦊</div>
         <h3>Firefox Add-on</h3>
         <p>For Firefox 101+. Uses background event page for full compatibility across Firefox versions.</p>
-        <a href="https://github.com/iamsourcer/candidatehunter/releases/latest/download/candidatehunter-firefox.zip"
-           class="btn btn-firefox">
-          <span>↓</span> Download for Firefox
-        </a>
+        <a href="https://github.com/iamsourcer/candidatehunter/releases/latest/download/candidatehunter-firefox.zip" class="btn btn-firefox"><span>↓</span> Download for Firefox</a>
         <div class="dl-version">v1.8 · Manual install (see instructions below)</div>
       </div>
     </div>
-
-    <!-- Install instructions -->
-    <div style="margin-top: 48px;">
-      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">Installation instructions</h3>
-      <p style="color: var(--muted); font-size: 14px; margin-bottom: 0;">The extension isn't in any store yet — install it manually in under 2 minutes.</p>
-
+    <div style="margin-top:48px">
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:4px">Installation instructions</h3>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:0">The extension isn't in any store yet — install it manually in under 2 minutes.</p>
       <div class="install-tabs">
-        <button class="tab-btn active" onclick="switchTab('chrome-install')">Chrome / Chromium</button>
-        <button class="tab-btn" onclick="switchTab('firefox-install')">Firefox</button>
+        <button class="tab-btn active" onclick="switchTab('chrome-install',this)">Chrome / Chromium</button>
+        <button class="tab-btn" onclick="switchTab('firefox-install',this)">Firefox</button>
       </div>
-
       <div id="chrome-install" class="tab-content active">
         <ol>
           <li>Download <strong>candidatehunter-chrome.zip</strong> and unzip it to a folder.</li>
@@ -587,22 +394,21 @@
           <li>The 🎯 CandidateHunter icon appears in your toolbar. Click it → Settings → add your AI API key.</li>
         </ol>
       </div>
-
       <div id="firefox-install" class="tab-content">
         <ol>
           <li>Download <strong>candidatehunter-firefox.zip</strong> and unzip it to a folder.</li>
           <li>Open Firefox and go to <code>about:debugging</code></li>
           <li>Click <strong>"This Firefox"</strong> in the left sidebar.</li>
-          <li>Click <strong>"Load Temporary Add-on…"</strong> and select the <code>manifest.json</code> file inside the unzipped folder.</li>
+          <li>Click <strong>"Load Temporary Add-on…"</strong> and select the <code>manifest.json</code> inside the unzipped folder.</li>
           <li>The 🎯 CandidateHunter icon appears in your toolbar. Click it → Settings → add your AI API key.</li>
-          <li><em>Note: Temporary add-ons are removed when Firefox restarts. For a permanent install, the extension needs to be signed by Mozilla.</em></li>
+          <li><em>Note: Temporary add-ons are removed when Firefox restarts. Permanent install requires Mozilla signing.</em></li>
         </ol>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── Footer ── -->
+<!-- FOOTER -->
 <footer>
   <div class="footer-links">
     <a href="https://github.com/iamsourcer/candidatehunter" target="_blank">GitHub</a>
@@ -613,12 +419,140 @@
 </footer>
 
 <script>
-  function switchTab(id) {
+  // ── Tab switcher ──────────────────────────────────────────────────────────────
+  function switchTab(id, btn) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById(id).classList.add('active');
-    event.target.classList.add('active');
+    btn.classList.add('active');
   }
+
+  // ── Popup animation ───────────────────────────────────────────────────────────
+  (function () {
+    const loadingEl = document.getElementById('pw-loading');
+    const resultEl  = document.getElementById('pw-result');
+    const statusEl  = document.getElementById('pw-status');
+    const fillEl    = document.getElementById('pw-fill');
+    const verdictEl = document.getElementById('pw-verdict');
+    const summaryEl = document.getElementById('pw-summary');
+    const btnEl     = document.getElementById('pw-btn');
+    const pctEl     = document.getElementById('pw-pct');
+
+    const STEPS = [
+      { text: 'Extracting profile…',  pct: 20 },
+      { text: 'Loading experience…',  pct: 48 },
+      { text: 'Analyzing with AI…',   pct: 80 },
+    ];
+
+    function showResult() {
+      loadingEl.style.display = 'none';
+      resultEl.style.display  = '';
+      verdictEl.classList.remove('vis');
+      summaryEl.classList.remove('vis');
+      btnEl.classList.remove('vis');
+      pctEl.textContent = '0';
+
+      let n = 0;
+      const timer = setInterval(() => {
+        n = Math.min(n + 2, 87);
+        pctEl.textContent = n;
+        if (n >= 87) {
+          clearInterval(timer);
+          verdictEl.classList.add('vis');
+          setTimeout(() => summaryEl.classList.add('vis'), 180);
+          setTimeout(() => btnEl.classList.add('vis'), 360);
+        }
+      }, 18);
+    }
+
+    function runCycle() {
+      resultEl.style.display  = 'none';
+      loadingEl.style.display = '';
+      fillEl.style.width = '0%';
+      statusEl.textContent = STEPS[0].text;
+
+      let i = 0;
+      function next() {
+        if (i < STEPS.length) {
+          statusEl.textContent = STEPS[i].text;
+          fillEl.style.width   = STEPS[i].pct + '%';
+          i++;
+          setTimeout(next, 1400);
+        } else {
+          showResult();
+          setTimeout(runCycle, 4200);
+        }
+      }
+      setTimeout(next, 500);
+    }
+
+    runCycle();
+  })();
+
+  // ── Stats counter ─────────────────────────────────────────────────────────────
+  (function () {
+    const configs = [
+      { id: 'stat-0', target: 12400, fmt: v => v.toLocaleString() + '+'  },
+      { id: 'stat-1', target: 15,    fmt: v => '< ' + v + 's'           },
+      { id: 'stat-2', target: 5,     fmt: v => String(v)                 },
+    ];
+
+    let done = false;
+    const observer = new IntersectionObserver(entries => {
+      if (done || !entries[0].isIntersecting) return;
+      done = true;
+
+      configs.forEach(({ id, target, fmt }) => {
+        const el = document.getElementById(id);
+        let n = 0;
+        const step = target / 60;
+        const timer = setInterval(() => {
+          n = Math.min(n + step, target);
+          el.textContent = fmt(Math.round(n));
+          if (n >= target) clearInterval(timer);
+        }, 1000 / 60);
+      });
+    }, { threshold: 0.6 });
+
+    const section = document.getElementById('stats-section');
+    if (section) observer.observe(section);
+  })();
+
+  // ── Easter egg ────────────────────────────────────────────────────────────────
+  (function () {
+    const icon   = document.getElementById('logo-icon');
+    const toast  = document.getElementById('easter-toast');
+    const colors = ['#7c3aed','#0073b1','#057642','#f59e0b','#ec4899','#60a5fa','#f87171','#34d399'];
+    let cooldown = false;
+
+    icon.addEventListener('click', () => {
+      if (cooldown) return;
+      cooldown = true;
+
+      for (let i = 0; i < 70; i++) {
+        const p    = document.createElement('div');
+        const size = 6 + Math.random() * 8;
+        p.className = 'confetti-piece';
+        p.style.cssText = [
+          `left:${Math.random() * 100}%`,
+          `background:${colors[Math.floor(Math.random() * colors.length)]}`,
+          `animation-delay:${Math.random() * 0.4}s`,
+          `animation-duration:${0.9 + Math.random() * 0.9}s`,
+          `width:${size}px`,
+          `height:${size}px`,
+          `border-radius:${Math.random() > 0.5 ? '50%' : '2px'}`,
+        ].join(';');
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 2200);
+      }
+
+      toast.classList.add('vis');
+      setTimeout(() => {
+        toast.classList.remove('vis');
+        setTimeout(() => { cooldown = false; }, 500);
+      }, 3000);
+    });
+  })();
 </script>
 </body>
 </html>
