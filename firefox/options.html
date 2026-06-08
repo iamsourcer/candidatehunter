@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CandidateHunter — Settings</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      width: 640px;
+      padding: 28px 32px 36px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      color: #1a1a1a;
+      background: #fff;
+    }
+    h2 { margin: 0 0 24px; font-size: 20px; color: #0073b1; }
+    h3 { margin: 0; font-size: 14px; font-weight: 700; color: #1a1a1a; }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin: 20px 0 6px;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+    }
+    select, input[type="text"], input[type="password"], textarea {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    select:focus, input:focus, textarea:focus {
+      outline: none;
+      border-color: #0073b1;
+      box-shadow: 0 0 0 2px rgba(0,115,177,0.15);
+    }
+    input[type="password"], input[type="text"] { font-family: monospace; }
+    textarea {
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      height: 380px;
+      resize: vertical;
+    }
+    .hint { font-size: 12px; color: #777; margin: 5px 0 0; line-height: 1.4; }
+
+    /* ── Provider sections ── */
+    .provider-section {
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-top: 14px;
+      background: #fafafa;
+    }
+    .provider-section label:first-child { margin-top: 0; }
+
+    /* ── Presets row ── */
+    .presets-row { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+    .preset-btn {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .preset-btn:hover { border-color: #0073b1; color: #0073b1; }
+    .preset-btn.active { border-color: #0073b1; color: #0073b1; background: #f0f7ff; }
+
+    /* ── Buttons ── */
+    .btn-row { margin-top: 22px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    #save-btn {
+      background: #0073b1; color: white; border: none;
+      padding: 10px 26px; border-radius: 4px; font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: background 0.2s;
+    }
+    #save-btn:hover { background: #005582; }
+    #reset-btn {
+      background: none; border: 1px solid #ccc; color: #555;
+      padding: 10px 18px; border-radius: 4px; font-size: 13px;
+      cursor: pointer; transition: border-color 0.15s;
+    }
+    #reset-btn:hover { border-color: #999; color: #333; }
+    #feedback { font-size: 13px; font-weight: 600; color: #057642; }
+    #feedback.warn { color: #888; }
+
+    /* ── Section divider ── */
+    .section-block {
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      padding: 16px 18px;
+      margin-top: 24px;
+      background: #fafafa;
+    }
+    .section-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .section-add-btn {
+      background: #0073b1; color: white; border: none;
+      padding: 5px 14px; border-radius: 4px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .section-add-btn:hover { background: #005582; }
+
+    /* ── Ashby section ── */
+    .ashby-row { display: flex; gap: 10px; align-items: flex-end; margin-top: 6px; }
+    .ashby-row input { flex: 1; margin-top: 0; }
+    #test-ashby-btn {
+      background: #7c3aed; color: white; border: none;
+      padding: 9px 16px; border-radius: 4px; font-size: 13px; font-weight: 500;
+      cursor: pointer; white-space: nowrap; transition: background 0.15s;
+    }
+    #test-ashby-btn:hover { background: #6d28d9; }
+    #ashby-feedback { font-size: 12px; font-weight: 600; color: #057642; margin-top: 5px; display: block; }
+    #ashby-feedback.warn { color: #c0392b; }
+
+    /* ── Role list ── */
+    #role-list { margin-top: 8px; }
+    .role-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 5px;
+      margin-bottom: 6px;
+    }
+    .role-item-name { flex: 1; font-weight: 600; font-size: 13px; }
+    .role-active-badge {
+      background: #e6f4ec; color: #057642;
+      font-size: 11px; font-weight: 700;
+      padding: 2px 8px; border-radius: 10px;
+    }
+    .role-item-btn {
+      background: none; border: 1px solid #ddd; color: #555;
+      padding: 4px 10px; border-radius: 4px; font-size: 11px;
+      cursor: pointer; transition: border-color 0.15s;
+    }
+    .role-item-btn:hover { border-color: #0073b1; color: #0073b1; }
+    .role-item-btn.danger:hover { border-color: #c0392b; color: #c0392b; }
+    .role-item-btn.set-active { background: #0073b1; color: white; border-color: #0073b1; }
+    .role-item-btn.set-active:hover { background: #005582; }
+    .role-empty { font-size: 13px; color: #aaa; font-style: italic; padding: 8px 0; }
+
+    /* ── Role editor ── */
+    #role-editor {
+      display: none;
+      margin-top: 16px;
+      padding: 16px;
+      border: 2px solid #0073b1;
+      border-radius: 6px;
+      background: #f8fbff;
+    }
+    #role-editor.visible { display: block; }
+    #role-editor h4 { margin: 0 0 12px; font-size: 13px; color: #0073b1; }
+    #role-editor label { margin-top: 12px; }
+    #role-editor label:first-of-type { margin-top: 0; }
+    #role-editor textarea { height: 220px; background: #fff; }
+    .editor-btn-row { margin-top: 14px; display: flex; gap: 10px; }
+    #save-role-btn {
+      background: #0073b1; color: white; border: none;
+      padding: 9px 22px; border-radius: 4px; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: background 0.15s;
+    }
+    #save-role-btn:hover { background: #005582; }
+    #cancel-role-btn {
+      background: none; border: 1px solid #ccc; color: #555;
+      padding: 9px 18px; border-radius: 4px; font-size: 13px;
+      cursor: pointer; transition: border-color 0.15s;
+    }
+    #cancel-role-btn:hover { border-color: #999; }
+    #role-editor-feedback { font-size: 12px; font-weight: 600; color: #057642; }
+
+    /* ── Generate from JD section ── */
+    .generate-section {
+      border: 1px dashed #b0bef5;
+      border-radius: 6px;
+      padding: 16px 18px 18px;
+      margin-top: 24px;
+      background: #f8f9ff;
+    }
+    .generate-section > h3 { font-size: 14px; color: #3949ab; font-weight: 600; margin-bottom: 4px; }
+    .generate-section > .section-hint { font-size: 12px; color: #777; margin: 0 0 14px; }
+    .hint-inline { font-weight: 400; color: #888; font-size: 12px; }
+    #generate-btn {
+      margin-top: 14px;
+      background: #5c6bc0; color: white; border: none;
+      padding: 10px 22px; border-radius: 4px; font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: background 0.2s;
+    }
+    #generate-btn:hover:not(:disabled) { background: #3949ab; }
+    #generate-btn:disabled { opacity: 0.6; cursor: default; }
+    #generate-feedback { font-size: 13px; font-weight: 600; color: #057642; margin-left: 12px; }
+    #generate-feedback.warn { color: #b45309; }
+  </style>
+</head>
+<body>
+  <h2>CandidateHunter — Settings</h2>
+
+  <!-- Provider selector -->
+  <label for="provider-select">AI Provider</label>
+  <select id="provider-select">
+    <option value="anthropic">Anthropic (Claude)</option>
+    <option value="openai-compat">OpenAI-compatible (DeepSeek, Groq, OpenAI…)</option>
+    <option value="gemini">Google Gemini</option>
+  </select>
+
+  <!-- ── Anthropic section ── -->
+  <div id="section-anthropic" class="provider-section">
+    <label for="anthropic-key">API Key</label>
+    <input type="password" id="anthropic-key" placeholder="sk-ant-api03-...">
+    <p class="hint">Get yours at <strong>console.anthropic.com</strong>. Stored locally — only sent to api.anthropic.com.</p>
+  </div>
+
+  <!-- ── OpenAI-compatible section ── -->
+  <div id="section-openai" class="provider-section" style="display:none">
+    <label>Preset</label>
+    <div class="presets-row">
+      <button class="preset-btn" data-url="https://api.deepseek.com" data-model="deepseek-chat">DeepSeek</button>
+      <button class="preset-btn" data-url="https://api.groq.com/openai" data-model="deepseek-r1-distill-llama-70b">Groq (free)</button>
+      <button class="preset-btn" data-url="https://api.openai.com" data-model="gpt-4o-mini">OpenAI</button>
+      <button class="preset-btn" data-url="" data-model="">Custom</button>
+    </div>
+    <label for="openai-base-url">Base URL</label>
+    <input type="text" id="openai-base-url" placeholder="https://api.deepseek.com">
+    <label for="openai-key">API Key</label>
+    <input type="password" id="openai-key" placeholder="Your API key">
+    <label for="openai-model">Model</label>
+    <input type="text" id="openai-model" placeholder="deepseek-chat">
+    <p class="hint">
+      <strong>Groq</strong> — free tier: 30 req/min, 6 000 req/day &nbsp;|&nbsp;
+      <strong>DeepSeek</strong> — ~$0.14 / 1M tokens &nbsp;|&nbsp;
+      <strong>OpenAI</strong> — gpt-4o-mini is the cheapest option
+    </p>
+  </div>
+
+  <!-- ── Gemini section ── -->
+  <div id="section-gemini" class="provider-section" style="display:none">
+    <label for="gemini-key">API Key</label>
+    <input type="password" id="gemini-key" placeholder="AIzaSy...">
+    <label for="gemini-model">Model</label>
+    <input type="text" id="gemini-model" placeholder="gemini-1.5-flash">
+    <p class="hint">Get a free key at <strong>aistudio.google.com</strong>. Free tier: 15 req/min, 1 500 req/day.</p>
+  </div>
+
+  <!-- ── Ashby integration ── -->
+  <div class="section-block" style="margin-top:24px">
+    <div class="section-header-row" style="margin-bottom:4px">
+      <h3>🏢 Ashby ATS</h3>
+    </div>
+    <p class="hint" style="margin:0 0 10px">Connect your Ashby account to browse candidates and push analyses as notes.</p>
+    <label for="ashby-key" style="margin-top:0">API Key</label>
+    <div class="ashby-row">
+      <input type="password" id="ashby-key" placeholder="your_ashby_api_key">
+      <button id="test-ashby-btn">Test Connection</button>
+    </div>
+    <span id="ashby-feedback"></span>
+  </div>
+
+  <!-- ── Auto-analyze toggle ── -->
+  <div style="margin-top:24px; display:flex; align-items:center; gap:8px">
+    <input type="checkbox" id="auto-analyze-toggle" style="width:auto; margin:0; cursor:pointer">
+    <label for="auto-analyze-toggle" style="margin:0; font-weight:600; cursor:pointer; font-size:13px">Auto-analyze profiles on open</label>
+  </div>
+  <p class="hint">When enabled, the extension automatically analyzes each LinkedIn profile you visit.</p>
+
+  <!-- ── Role Configurations ── -->
+  <div class="section-block">
+    <div class="section-header-row">
+      <h3>Role Configurations</h3>
+      <button id="add-role-btn" class="section-add-btn">+ Add Role</button>
+    </div>
+    <p class="hint" style="margin:0 0 8px">Each role has its own system prompt. The active role is used when analyzing candidates.</p>
+    <div id="role-list"></div>
+
+    <!-- Role editor (shown when adding/editing) -->
+    <div id="role-editor">
+      <h4 id="role-editor-title">New Role</h4>
+      <input type="hidden" id="editing-role-id">
+      <label for="role-name-input">Role name</label>
+      <input type="text" id="role-name-input" placeholder="e.g. Senior AE — Solvd" style="font-family:inherit">
+      <label for="role-company-context">Company Context</label>
+      <textarea id="role-company-context" rows="4" style="height:100px" placeholder="Describe what the company does, sales model, target buyers…"></textarea>
+      <label for="role-system-prompt">System Prompt</label>
+      <textarea id="role-system-prompt" placeholder="Paste or generate the evaluation prompt…"></textarea>
+      <div class="editor-btn-row">
+        <button id="save-role-btn">Save Role</button>
+        <button id="cancel-role-btn">Cancel</button>
+        <span id="role-editor-feedback"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Generate from JD ── -->
+  <div class="generate-section">
+    <h3>✨ Generate Prompt from Job Description</h3>
+    <p class="section-hint">Paste a JD to build a tailored evaluation prompt. Copy the result into a Role Configuration above.</p>
+
+    <label for="company-context">Company Context <span class="hint-inline">— reference for generation</span></label>
+    <textarea id="company-context" rows="5" placeholder="Describe what your company does, your sales model, target buyers, compensation structure..."></textarea>
+
+    <label for="jd-input" style="margin-top:14px">Paste Job Description</label>
+    <textarea id="jd-input" rows="8" placeholder="Paste the full job description here..."></textarea>
+
+    <button id="generate-btn">✨ Generate System Prompt</button>
+    <span id="generate-feedback"></span>
+  </div>
+
+  <!-- Legacy system prompt (shown only when no role configs exist) -->
+  <div id="legacy-prompt-section">
+    <label for="system-prompt">Evaluation System Prompt</label>
+    <textarea id="system-prompt"></textarea>
+    <p class="hint">Used when no Role Configuration is active. Once you set up roles above, this field becomes a fallback.</p>
+  </div>
+
+  <div class="btn-row">
+    <button id="save-btn">Save Settings</button>
+    <button id="reset-btn">Reset Default Prompt</button>
+    <span id="feedback"></span>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

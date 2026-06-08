@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Candidate History</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      width: 640px;
+      padding: 28px 32px 36px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      color: #1a1a1a;
+      background: #fff;
+    }
+    .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    h2 { margin: 0; font-size: 20px; color: #0073b1; }
+    #clear-btn {
+      background: none;
+      border: 1px solid #ccc;
+      color: #c0392b;
+      padding: 7px 16px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    #clear-btn:hover { border-color: #c0392b; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0 10px 8px;
+      border-bottom: 1px solid #e8e8e8;
+    }
+    td {
+      padding: 10px 10px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+
+    .name-link {
+      color: #0073b1;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .name-link:hover { text-decoration: underline; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .badge.advance { background: #e6f4ec; color: #057642; }
+    .badge.archive { background: #fde8e8; color: #c0392b; }
+
+    .match-pct { font-weight: 700; }
+    .match-pct.advance { color: #057642; }
+    .match-pct.archive { color: #c0392b; }
+
+    .date-cell { color: #888; font-size: 12px; white-space: nowrap; }
+
+    .empty-state {
+      text-align: center;
+      color: #aaa;
+      padding: 48px 0;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-row">
+    <h2>📋 Candidate History</h2>
+    <button id="clear-btn">Clear History</button>
+  </div>
+  <div id="content"></div>
+  <script src="history.js"></script>
+</body>
+</html>

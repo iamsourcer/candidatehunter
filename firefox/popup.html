@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      width: 280px;
+      padding: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      text-align: center;
+      margin: 0;
+    }
+
+    /* ── Header ── */
+    .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .header-left { text-align: left; }
+    h3 { margin: 0; font-size: 15px; color: #333; }
+    #active-role-display { font-size: 11px; color: #888; margin-top: 1px; }
+    #settings-btn {
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      color: #999;
+      padding: 2px 4px;
+      line-height: 1;
+      transition: color 0.15s;
+      flex-shrink: 0;
+    }
+    #settings-btn:hover { color: #0073b1; }
+
+    /* ── Action buttons ── */
+    .action-btn {
+      position: relative;
+      overflow: hidden;
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      transition: background-color 0.2s;
+      margin-bottom: 6px;
+    }
+    #projects-btn { background-color: #555; }
+    #projects-btn:hover:not(:disabled) { background-color: #333; }
+    #ashby-btn    { background-color: #7c3aed; display: none; }
+    #ashby-btn:hover:not(:disabled)    { background-color: #6d28d9; }
+    #analyze-btn  { background-color: #1a1a2e; }
+    #analyze-btn:hover:not(:disabled)  { background-color: #16213e; }
+    .action-btn:disabled { cursor: default; opacity: 0.72; }
+
+    /* Progress fill */
+    .action-btn::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%;
+      width: var(--pct, 0%);
+      background: rgba(255,255,255,0.22);
+      transition: width 0.45s ease;
+      pointer-events: none;
+    }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 1px solid #e8e8e8; margin: 6px 0 8px; }
+
+    /* ── Status / error area ── */
+    #status-area {
+      margin-top: 6px;
+      font-size: 11px;
+      line-height: 1.4;
+      color: #555;
+      text-align: left;
+      word-break: break-word;
+      display: none;
+    }
+    #status-area.visible { display: block; }
+    #status-area.error   { color: #c0392b; }
+    #status-area.success { color: #057642; }
+
+    /* ── AI result area ── */
+    #result-area {
+      display: none;
+      margin-top: 10px;
+      margin-bottom: 8px;
+      text-align: left;
+      background: #f9f9f9;
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    #verdict-line {
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 7px;
+    }
+    #verdict-line.green { color: #057642; }
+    #verdict-line.red   { color: #c0392b; }
+    #summary-text {
+      font-size: 12px;
+      color: #333;
+      line-height: 1.55;
+      margin: 0 0 10px;
+    }
+    #full-analysis-btn {
+      background: none;
+      border: 1px solid #0073b1;
+      color: #0073b1;
+      padding: 7px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 12px;
+      font-weight: 500;
+      transition: background 0.15s;
+      margin-bottom: 6px;
+    }
+    #full-analysis-btn:hover { background: #f0f7ff; }
+
+    /* ── Push to Ashby button ── */
+    #push-ashby-btn {
+      display: none;
+      background: none;
+      border: 1px solid #7c3aed;
+      color: #7c3aed;
+      padding: 7px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 12px;
+      font-weight: 500;
+      transition: background 0.15s;
+      margin-bottom: 0;
+    }
+    #push-ashby-btn:hover { background: #f5f0ff; }
+
+    /* ── Open LinkedIn from Ashby ── */
+    #open-linkedin-btn {
+      display: none;
+      font-size: 11px;
+      color: #0073b1;
+      text-decoration: none;
+      margin-top: 6px;
+      display: none;
+    }
+    #open-linkedin-btn:hover { text-decoration: underline; }
+
+    /* ── Shared inline panel styles ── */
+    .inline-panel {
+      display: none;
+      margin-top: 10px;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      text-align: left;
+    }
+    .inline-panel.visible { display: block; }
+    .panel-label {
+      margin: 0 0 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #555;
+    }
+    .panel-select, .panel-input {
+      width: 100%;
+      padding: 7px;
+      margin-bottom: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .panel-input { display: none; }
+    .panel-row { display: flex; gap: 6px; }
+    .panel-row button {
+      flex: 1;
+      padding: 7px;
+      border-radius: 4px;
+      font-size: 12px;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+    }
+    .panel-confirm { background: #057642; color: white; }
+    .panel-confirm:hover { background: #045c38; }
+    .panel-confirm.ashby { background: #7c3aed; }
+    .panel-confirm.ashby:hover { background: #6d28d9; }
+    .panel-cancel { background: #eee; color: #333; }
+    .panel-cancel:hover { background: #ddd; }
+
+    /* ── Re-analyze row ── */
+    #reanalyze-row {
+      display: none;
+      text-align: center;
+      margin-top: 4px;
+      margin-bottom: 2px;
+    }
+    #reanalyze-link { font-size: 11px; color: #999; text-decoration: none; }
+    #reanalyze-link:hover { color: #555; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="top-row">
+    <div class="header-left">
+      <h3>CandidateHunter</h3>
+      <div id="active-role-display"></div>
+    </div>
+    <button id="settings-btn" title="Settings">⚙</button>
+  </div>
+
+  <button id="projects-btn" class="action-btn">📋 Projects</button>
+  <button id="ashby-btn"    class="action-btn">🏢 Ashby</button>
+
+  <hr class="divider">
+
+  <div id="result-area">
+    <div id="verdict-line"></div>
+    <p id="summary-text"></p>
+    <button id="full-analysis-btn">View Full Analysis →</button>
+    <button id="push-ashby-btn">→ Push to Ashby</button>
+    <a id="open-linkedin-btn" href="#" target="_blank">🔗 Open LinkedIn for richer analysis →</a>
+
+    <!-- Project panel -->
+    <div id="project-panel" class="inline-panel">
+      <p class="panel-label">Add to project:</p>
+      <input id="candidate-name-input" class="panel-input" type="text" placeholder="Candidate name…" style="display:block; font-family:inherit">
+      <select id="project-select" class="panel-select"></select>
+      <input id="new-project-input" class="panel-input" type="text" placeholder="New project name…">
+      <div class="panel-row">
+        <button id="confirm-add-btn" class="panel-confirm">Add</button>
+        <button id="cancel-add-btn"  class="panel-cancel">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Ashby push panel -->
+    <div id="ashby-push-panel" class="inline-panel">
+      <p class="panel-label">Push to Ashby job:</p>
+      <select id="ashby-job-select" class="panel-select"></select>
+      <div class="panel-row">
+        <button id="confirm-ashby-btn" class="panel-confirm ashby">Push</button>
+        <button id="cancel-ashby-btn"  class="panel-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <button id="analyze-btn" class="action-btn">Run Analysis</button>
+  <p id="ashby-hint" style="display:none; font-size:11px; color:#888; margin:2px 0 0; text-align:center; line-height:1.4">
+    Tip: select resume text on the page first for better results
+  </p>
+
+  <div id="reanalyze-row">
+    <a id="reanalyze-link" href="#">↺ Re-analyze</a>
+  </div>
+
+  <div id="status-area"></div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

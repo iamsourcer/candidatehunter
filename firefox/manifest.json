@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "CandidateHunter",
+  "version": "1.8",
+  "description": "AI-powered candidate screening for LinkedIn profiles.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://*.linkedin.com/*",
+    "https://*/*"
+  ],
+  "background": {
+    "page": "background.html"
+  },
+  "options_page": "options.html",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "candidatehunter@candidatehunter.app",
+      "strict_min_version": "101.0"
+    }
+  }
+}
