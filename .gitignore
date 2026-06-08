@@ -1,0 +1,7 @@
+.DS_Store
+Thumbs.db
+*.zip
+*.crx
+*.xpi
+output_test.json
+node_modules/
