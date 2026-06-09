@@ -542,7 +542,13 @@ async function clearUrlCache() {
   const all  = await chrome.storage.local.get(null);
   const keys = Object.keys(all).filter(k => k.startsWith('urlcache_'));
   if (keys.length) await chrome.storage.local.remove(keys);
+  return keys.length;
 }
+
+document.getElementById('clear-cache-btn').addEventListener('click', async () => {
+  const count = await clearUrlCache();
+  flash(count ? `Analysis cache cleared (${count} entries removed)` : 'Cache already empty', '');
+});
 
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
