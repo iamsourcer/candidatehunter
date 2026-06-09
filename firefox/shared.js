@@ -140,10 +140,11 @@ export async function callAnthropic(key, systemPrompt, userMessage) {
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model:      'claude-sonnet-4-6',
-      max_tokens: 2500,
-      system:     systemPrompt,
-      messages:   [{ role: 'user', content: userMessage }],
+      model:       'claude-sonnet-4-6',
+      max_tokens:  2500,
+      temperature: 0,
+      system:      systemPrompt,
+      messages:    [{ role: 'user', content: userMessage }],
     }),
   });
   if (!res.ok) {
@@ -163,7 +164,8 @@ export async function callOpenAICompat(baseUrl, key, model, systemPrompt, userMe
     },
     body: JSON.stringify({
       model,
-      max_tokens: 2500,
+      max_tokens:  2500,
+      temperature: 0,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user',   content: userMessage  },
@@ -185,7 +187,7 @@ export async function callGemini(key, model, systemPrompt, userMessage) {
     body: JSON.stringify({
       system_instruction: { parts: [{ text: systemPrompt }] },
       contents:           [{ parts: [{ text: userMessage }] }],
-      generationConfig:   { maxOutputTokens: 2500 },
+      generationConfig:   { maxOutputTokens: 2500, temperature: 0 },
     }),
   });
   if (!res.ok) {
@@ -264,6 +266,65 @@ export async function addCandidateToProject(projectId, candidate) {
   proj.candidates = proj.candidates.filter(c => c.url !== candidate.url);
   proj.candidates.unshift({ ...candidate, addedAt: new Date().toISOString() });
   await chrome.storage.local.set({ projects });
+}
+
+export function buildSynthesisMessage(ashbyResult, linkedinResult) {
+  return [
+    'You have two independent analyses of the same candidate sourced from different platforms.',
+    '',
+    'ANALYSIS A — Ashby ATS (data may be limited or sparse):',
+    `Match: ${ashbyResult.matchPct}% | Verdict: ${ashbyResult.verdict}`,
+    `Summary: ${ashbyResult.summary}`,
+    '',
+    'ANALYSIS B — LinkedIn profile (full structured data, higher reliability):',
+    `Match: ${linkedinResult.matchPct}% | Verdict: ${linkedinResult.verdict}`,
+    `Summary: ${linkedinResult.summary}`,
+    '',
+    'Reconcile these into a single final verdict. Weight Analysis B (LinkedIn) more heavily — it contains richer and more reliable profile data.',
+    'If they agree, confirm with added confidence. If they conflict, side with the analysis supported by stronger evidence and explain why.',
+    '',
+    'Structure your response in exactly two parts separated by ---FULL---:',
+    '',
+    'PART 1 — Final verdict (one JSON object on a single line):',
+    '{"match_pct": <integer 0-100>, "verdict": "ADVANCE" or "ARCHIVE", "summary": "<2-3 sentence plain-text explanation>"}',
+    '',
+    '---FULL---',
+    '',
+    'PART 2 — One paragraph reconciling how you weighted the two sources, then the full Task 1 assessment. If verdict is ADVANCE (match_pct >= 80), also include Task 2 Phone Screen Script.',
+  ].join('\n');
+}
+
+export function extractLinkedInFromUrl(url) {
+  return new Promise((resolve) => {
+    chrome.tabs.create({ url, active: false }, (newTab) => {
+      if (chrome.runtime.lastError) { resolve(null); return; }
+
+      const giveUp = setTimeout(() => {
+        chrome.tabs.onUpdated.removeListener(onUpdated);
+        chrome.tabs.remove(newTab.id, () => {});
+        resolve(null);
+      }, 30_000);
+
+      function onUpdated(tabId, info) {
+        if (tabId !== newTab.id || info.status !== 'complete') return;
+        chrome.tabs.onUpdated.removeListener(onUpdated);
+        clearTimeout(giveUp);
+        setTimeout(() => {
+          chrome.scripting.executeScript(
+            { target: { tabId: newTab.id }, files: ['content.js'] },
+            (results) => {
+              chrome.tabs.remove(newTab.id, () => {});
+              if (chrome.runtime.lastError) { resolve(null); return; }
+              const data = results?.[0]?.result;
+              resolve((!data || data.error) ? null : data);
+            }
+          );
+        }, 3000);
+      }
+
+      chrome.tabs.onUpdated.addListener(onUpdated);
+    });
+  });
 }
 
 // Injected into LinkedIn experience tab via chrome.scripting — must remain self-contained
