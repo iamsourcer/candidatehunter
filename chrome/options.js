@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('ashby-key').value = data.ashbyKey || '';
 
     highlightActivePreset(data.openaiBaseUrl || '', data.openaiModel || '');
+    updateOpenRouterModelsRow(data.openaiBaseUrl || '', data.openaiModel || '');
     renderRoleList(data.roleConfigs || []);
 
     // Show Quick Start banner if no API key configured
@@ -165,14 +166,36 @@ function highlightActivePreset(url, model) {
       btn.dataset.url === url && btn.dataset.model === model
     );
   });
+  updateOpenRouterModelsRow(url, model);
 }
+
+function updateOpenRouterModelsRow(url, model) {
+  const row = document.getElementById('openrouter-models');
+  if (!row) return;
+  const isOR = url.includes('openrouter.ai');
+  row.style.display = isOR ? '' : 'none';
+  if (isOR) highlightOpenRouterModel(model);
+}
+
+function highlightOpenRouterModel(model) {
+  document.querySelectorAll('.or-model-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.model === model);
+  });
+}
+
+document.querySelectorAll('.or-model-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('openai-model').value = btn.dataset.model;
+    highlightOpenRouterModel(btn.dataset.model);
+  });
+});
 
 // Keep preset highlight in sync when user edits the URL field
 document.getElementById('openai-base-url').addEventListener('input', () => {
-  highlightActivePreset(
-    document.getElementById('openai-base-url').value,
-    document.getElementById('openai-model').value,
-  );
+  const url   = document.getElementById('openai-base-url').value;
+  const model = document.getElementById('openai-model').value;
+  highlightActivePreset(url, model);
+  updateOpenRouterModelsRow(url, model);
 });
 
 // ── Save ──────────────────────────────────────────────────────────────────────

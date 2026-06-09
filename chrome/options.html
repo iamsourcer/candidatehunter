@@ -71,6 +71,13 @@
     }
     .preset-btn:hover { border-color: #0073b1; color: #0073b1; }
     .preset-btn.active { border-color: #0073b1; color: #0073b1; background: #f0f7ff; }
+    .or-model-btn {
+      background: #fff; border: 1px solid #c5d0ee; border-radius: 4px;
+      padding: 4px 11px; font-size: 12px; font-weight: 500; cursor: pointer;
+      color: #3949ab; transition: border-color 0.15s, background 0.15s;
+    }
+    .or-model-btn:hover { border-color: #3949ab; background: #eef1fc; }
+    .or-model-btn.active { border-color: #3949ab; background: #e8ecfc; font-weight: 700; }
 
     /* ── Buttons ── */
     .btn-row { margin-top: 22px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -243,6 +250,15 @@
       <button class="preset-btn" data-url="https://openrouter.ai/api" data-model="meta-llama/llama-3.3-70b-instruct:free">OpenRouter (free)</button>
       <button class="preset-btn" data-url="https://api.openai.com" data-model="gpt-4o-mini">OpenAI</button>
       <button class="preset-btn" data-url="" data-model="">Custom</button>
+    </div>
+    <div id="openrouter-models" style="display:none;margin-top:10px;padding:10px 12px;background:#f5f8ff;border:1px solid #dde6f8;border-radius:5px">
+      <p style="font-size:11px;color:#3949ab;font-weight:600;margin:0 0 7px">Best free models for recruiting analysis:</p>
+      <div class="presets-row" style="gap:5px;flex-wrap:wrap">
+        <button class="or-model-btn" data-model="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B ⭐</button>
+        <button class="or-model-btn" data-model="deepseek/deepseek-r1:free">DeepSeek R1</button>
+        <button class="or-model-btn" data-model="google/gemma-3-27b-it:free">Gemma 3 27B</button>
+        <button class="or-model-btn" data-model="qwen/qwen3-235b-a22b:free">Qwen 3 235B</button>
+      </div>
     </div>
     <label for="openai-base-url">Base URL</label>
     <input type="text" id="openai-base-url" placeholder="https://api.deepseek.com">
