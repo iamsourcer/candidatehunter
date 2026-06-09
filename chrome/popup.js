@@ -1,5 +1,6 @@
 import {
-  buildUserMessage, buildAshbyUserMessage, callAI, parseAnalysisResponse, extractExperienceFunc,
+  buildUserMessage, buildAshbyUserMessage, buildSynthesisMessage, callAI,
+  parseAnalysisResponse, extractExperienceFunc, extractLinkedInFromUrl,
   getProjects, createProject, addCandidateToProject,
   getActiveSystemPrompt, ashbyFetch,
 } from './shared.js';
@@ -110,6 +111,7 @@ async function analyzeCandidate() {
     btn.style.setProperty('--pct', '15%');
 
     let userMessage, candidateName, extraStorage = {};
+  let ashbyLinkedInUrl = null;
 
     if (isLI) {
       // ── LinkedIn extraction ──────────────────────────────────────────────
@@ -164,10 +166,11 @@ async function analyzeCandidate() {
         profileBlocks: selectedText || domData.profileBlocks || '',
       };
 
-      userMessage   = buildAshbyUserMessage(ashbyData);
-      candidateName = ashbyData.name || 'Candidate';
-      if (ashbyData.linkedInUrl) {
-        extraStorage[`ashby_li_${tab.id}`] = ashbyData.linkedInUrl;
+      userMessage      = buildAshbyUserMessage(ashbyData);
+      candidateName    = ashbyData.name || 'Candidate';
+      ashbyLinkedInUrl = ashbyData.linkedInUrl || null;
+      if (ashbyLinkedInUrl) {
+        extraStorage[`ashby_li_${tab.id}`] = ashbyLinkedInUrl;
       }
     }
 
@@ -176,7 +179,31 @@ async function analyzeCandidate() {
     const activeSystemPrompt = await getActiveSystemPrompt();
     const responseText       = await callAI(settings, activeSystemPrompt, userMessage);
 
-    const { matchPct, verdict, summary, fullAnalysis } = parseAnalysisResponse(responseText);
+    let { matchPct, verdict, summary, fullAnalysis } = parseAnalysisResponse(responseText);
+
+    // ── Cross-platform synthesis (Ashby + LinkedIn) ───────────────────────────
+    if (isAshby && ashbyLinkedInUrl) {
+      try {
+        btn.textContent = 'Loading LinkedIn profile…';
+        btn.style.setProperty('--pct', '72%');
+        const liData = await extractLinkedInFromUrl(ashbyLinkedInUrl);
+        if (liData) {
+          btn.textContent = 'Cross-referencing sources…';
+          btn.style.setProperty('--pct', '85%');
+          const liResponse = await callAI(settings, activeSystemPrompt, buildUserMessage(liData));
+          const liResult   = parseAnalysisResponse(liResponse);
+
+          if (liResult.verdict !== verdict || matchPct < 70) {
+            const synthResponse = await callAI(settings, activeSystemPrompt,
+              buildSynthesisMessage({ matchPct, verdict, summary }, liResult));
+            ({ matchPct, verdict, summary, fullAnalysis } = parseAnalysisResponse(synthResponse));
+          } else {
+            ({ matchPct, verdict, summary, fullAnalysis } = liResult);
+          }
+          if (liData.profile?.name) candidateName = liData.profile.name;
+        }
+      } catch (_) { /* si falla la síntesis, usa el resultado Ashby */ }
+    }
 
     await chrome.storage.local.set({
       [`analysis_${tab.id}`]:   { matchPct, verdict, summary, candidateName },

@@ -1,4 +1,4 @@
-import { buildUserMessage, buildAshbyUserMessage, callAI, parseAnalysisResponse, extractExperienceFunc, getActiveSystemPrompt } from './shared.js';
+import { buildUserMessage, buildAshbyUserMessage, buildSynthesisMessage, callAI, parseAnalysisResponse, extractExperienceFunc, extractLinkedInFromUrl, getActiveSystemPrompt } from './shared.js';
 
 const inProgress = new Map();
 
@@ -29,7 +29,7 @@ function getActiveKey(settings) {
 }
 
 // ── Shared: check cache → settings → run AI → update badge ───────────────────
-async function runAnalysis(tabId, cleanUrl, extractAndBuild) {
+async function runAnalysis(tabId, cleanUrl, extractAndBuild, postProcess = null) {
   chrome.action.setBadgeText({ tabId, text: '...' });
   chrome.action.setBadgeBackgroundColor({ tabId, color: '#888888' });
 
@@ -57,11 +57,22 @@ async function runAnalysis(tabId, cleanUrl, extractAndBuild) {
   await chrome.storage.local.set({ [`analyzing_${tabId}`]: true });
 
   try {
-    const { userMessage, candidateName, extra } = await extractAndBuild(tabId, cleanUrl);
+    const extractResult      = await extractAndBuild(tabId, cleanUrl);
+    const { userMessage, extra } = extractResult;
+    let   { candidateName }  = extractResult;
     const activeSystemPrompt = await getActiveSystemPrompt();
     const responseText       = await callAI(settings, activeSystemPrompt, userMessage);
-    const { matchPct, verdict, summary, fullAnalysis } = parseAnalysisResponse(responseText);
+    let result = parseAnalysisResponse(responseText);
 
+    if (postProcess) {
+      const override = await postProcess(result, extractResult, settings, activeSystemPrompt);
+      if (override) {
+        result        = override.result ?? result;
+        candidateName = override.candidateName ?? candidateName;
+      }
+    }
+
+    const { matchPct, verdict, summary, fullAnalysis } = result;
     const tabEntry = { matchPct, verdict, summary, candidateName };
     const urlEntry = { ...tabEntry, fullAnalysis, timestamp: Date.now() };
 
@@ -149,25 +160,39 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   inProgress.set(tabId, true);
 
   try {
-    await runAnalysis(tabId, cleanUrl, async (tabId) => {
-      await waitForAshbyDOM(tabId);
-
-      const [res] = await chrome.scripting.executeScript({
-        target: { tabId },
-        files:  ['ashby_content.js'],
-      });
-      const ashbyData = res?.result || {};
-
-      const extra = ashbyData.linkedInUrl
-        ? { [`ashby_li_${tabId}`]: ashbyData.linkedInUrl }
-        : null;
-
-      return {
-        userMessage:   buildAshbyUserMessage(ashbyData),
-        candidateName: ashbyData.name || 'Candidate',
-        extra,
-      };
-    });
+    await runAnalysis(
+      tabId, cleanUrl,
+      async (tabId) => {
+        await waitForAshbyDOM(tabId);
+        const [res] = await chrome.scripting.executeScript({ target: { tabId }, files: ['ashby_content.js'] });
+        const ashbyData = res?.result || {};
+        return {
+          userMessage:     buildAshbyUserMessage(ashbyData),
+          candidateName:   ashbyData.name || 'Candidate',
+          extra:           ashbyData.linkedInUrl ? { [`ashby_li_${tabId}`]: ashbyData.linkedInUrl } : null,
+          ashbyLinkedInUrl: ashbyData.linkedInUrl || null,
+        };
+      },
+      async (ashbyResult, extractResult, settings, systemPrompt) => {
+        const { ashbyLinkedInUrl, candidateName } = extractResult;
+        if (!ashbyLinkedInUrl) return null;
+        try {
+          const liData = await extractLinkedInFromUrl(ashbyLinkedInUrl);
+          if (!liData) return null;
+          const liResponse = await callAI(settings, systemPrompt, buildUserMessage(liData));
+          const liResult   = parseAnalysisResponse(liResponse);
+          let result;
+          if (liResult.verdict !== ashbyResult.verdict || ashbyResult.matchPct < 70) {
+            const synthResponse = await callAI(settings, systemPrompt,
+              buildSynthesisMessage(ashbyResult, liResult));
+            result = parseAnalysisResponse(synthResponse);
+          } else {
+            result = liResult;
+          }
+          return { result, candidateName: liData.profile?.name || candidateName };
+        } catch (_) { return null; }
+      }
+    );
   } finally {
     inProgress.delete(tabId);
   }
