@@ -496,7 +496,9 @@ document.getElementById('save-role-btn').addEventListener('click', async () => {
   if (editingRoleId) {
     const idx = roleConfigs.findIndex(r => r.id === editingRoleId);
     if (idx >= 0) {
+      const wasActive = roleConfigs[idx].isActive;
       roleConfigs[idx] = { ...roleConfigs[idx], name, companyContext: context, systemPrompt: prompt };
+      if (wasActive) await clearUrlCache();
     }
   } else {
     const isFirst = roleConfigs.length === 0;
@@ -530,9 +532,16 @@ async function deleteRole(roleId) {
 async function setActiveRole(roleId) {
   const { roleConfigs = [] } = await chrome.storage.local.get('roleConfigs');
   roleConfigs.forEach(r => { r.isActive = r.id === roleId; });
+  await clearUrlCache();
   await chrome.storage.local.set({ roleConfigs });
   renderRoleList(roleConfigs);
-  flash('Active role updated ✓', '');
+  flash('Active role updated ✓ (analysis cache cleared)', '');
+}
+
+async function clearUrlCache() {
+  const all  = await chrome.storage.local.get(null);
+  const keys = Object.keys(all).filter(k => k.startsWith('urlcache_'));
+  if (keys.length) await chrome.storage.local.remove(keys);
 }
 
 function escHtml(s) {
