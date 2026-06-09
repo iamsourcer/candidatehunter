@@ -287,12 +287,27 @@ document.getElementById('new-project-name').addEventListener('keydown', (e) => {
 });
 
 // ── Backup / restore ──────────────────────────────────────────────────────────
+const SETTINGS_KEYS = [
+  'provider', 'anthropicModel',
+  'openaiBaseUrl', 'openaiModel',
+  'geminiModel',
+  'systemPrompt', 'companyContext',
+  'roleConfigs', 'autoAnalyze', 'highlightEnabled',
+  // API keys — exported but only restored when empty on import
+  'anthropicKey', 'openaiKey', 'geminiKey', 'ashbyKey',
+];
+const API_KEY_FIELDS = new Set(['anthropicKey', 'openaiKey', 'geminiKey', 'ashbyKey']);
+
 document.getElementById('backup-btn').addEventListener('click', async () => {
   const projects = await getProjects();
+  const rawSettings = await chrome.storage.local.get(SETTINGS_KEYS);
+  const settings = Object.fromEntries(
+    Object.entries(rawSettings).filter(([, v]) => v !== undefined && v !== null && v !== '')
+  );
   const { version } = chrome.runtime.getManifest();
   const date = new Date().toISOString().slice(0, 10);
   downloadJSON(
-    { candidatehunter_backup: true, version, exportedAt: new Date().toISOString(), projects },
+    { candidatehunter_backup: true, version, exportedAt: new Date().toISOString(), projects, settings },
     `candidatehunter_backup_${date}.json`,
   );
 });
@@ -315,23 +330,49 @@ document.getElementById('backup-file-input').addEventListener('change', async (e
     return;
   }
 
+  // ── Restore projects (merge by ID) ──
   const existing    = await getProjects();
   const existingIds = new Set(existing.map(p => p.id));
   const toAdd       = data.projects.filter(p => p.id && !existingIds.has(p.id));
   const skipped     = data.projects.length - toAdd.length;
 
-  if (toAdd.length === 0) {
-    showToast(`Todos los proyectos ya existen${skipped ? ` (${skipped} omitidos)` : ''}`, 'info');
-    return;
+  if (toAdd.length > 0) {
+    await saveProjects([...toAdd, ...existing]);
+    if (!activeProjectId) activeProjectId = toAdd[0].id;
+    renderAll();
   }
 
-  await saveProjects([...toAdd, ...existing]);
-  if (!activeProjectId) activeProjectId = toAdd[0].id;
-  renderAll();
+  // ── Restore settings ──
+  let settingsRestored = 0;
+  if (data.settings && typeof data.settings === 'object') {
+    const current = await chrome.storage.local.get(SETTINGS_KEYS);
+    const toRestore = {};
+    for (const [k, v] of Object.entries(data.settings)) {
+      if (!SETTINGS_KEYS.includes(k)) continue;
+      if (API_KEY_FIELDS.has(k)) {
+        // Only restore API keys if not already set
+        if (!current[k]) { toRestore[k] = v; settingsRestored++; }
+      } else {
+        toRestore[k] = v;
+        settingsRestored++;
+      }
+    }
+    if (Object.keys(toRestore).length > 0)
+      await chrome.storage.local.set(toRestore);
+  }
 
-  const added  = `${toAdd.length} proyecto${toAdd.length > 1 ? 's' : ''} importado${toAdd.length > 1 ? 's' : ''}`;
-  const skip   = skipped ? `, ${skipped} ya existía${skipped > 1 ? 'n' : ''}` : '';
-  showToast(added + skip, 'success');
+  // ── Toast summary ──
+  const parts = [];
+  if (toAdd.length > 0)
+    parts.push(`${toAdd.length} proyecto${toAdd.length > 1 ? 's' : ''} importado${toAdd.length > 1 ? 's' : ''}${skipped ? ` (${skipped} ya existía${skipped > 1 ? 'n' : ''})` : ''}`);
+  else if (skipped > 0)
+    parts.push(`Proyectos ya existían`);
+  if (settingsRestored > 0)
+    parts.push(`configuración restaurada`);
+  if (parts.length === 0)
+    showToast('Nada nuevo para importar', 'info');
+  else
+    showToast(parts.join(' · '), 'success');
 });
 
 function showToast(msg, type = 'info') {
