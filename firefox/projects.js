@@ -245,6 +245,67 @@ document.getElementById('new-project-name').addEventListener('keydown', (e) => {
   if (e.key === 'Escape') document.getElementById('cancel-project-btn').click();
 });
 
+// ── Backup / restore ──────────────────────────────────────────────────────────
+document.getElementById('backup-btn').addEventListener('click', async () => {
+  const projects = await getProjects();
+  const { version } = chrome.runtime.getManifest();
+  const date = new Date().toISOString().slice(0, 10);
+  downloadJSON(
+    { candidatehunter_backup: true, version, exportedAt: new Date().toISOString(), projects },
+    `candidatehunter_backup_${date}.json`,
+  );
+});
+
+document.getElementById('restore-btn').addEventListener('click', () => {
+  document.getElementById('backup-file-input').click();
+});
+
+document.getElementById('backup-file-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+
+  let data;
+  try { data = JSON.parse(await file.text()); }
+  catch (_) { showToast('Archivo JSON inválido', 'error'); return; }
+
+  if (!data.candidatehunter_backup || !Array.isArray(data.projects)) {
+    showToast('No es un backup de CandidateHunter', 'error');
+    return;
+  }
+
+  const existing    = await getProjects();
+  const existingIds = new Set(existing.map(p => p.id));
+  const toAdd       = data.projects.filter(p => p.id && !existingIds.has(p.id));
+  const skipped     = data.projects.length - toAdd.length;
+
+  if (toAdd.length === 0) {
+    showToast(`Todos los proyectos ya existen${skipped ? ` (${skipped} omitidos)` : ''}`, 'info');
+    return;
+  }
+
+  await saveProjects([...toAdd, ...existing]);
+  if (!activeProjectId) activeProjectId = toAdd[0].id;
+  renderAll();
+
+  const added  = `${toAdd.length} proyecto${toAdd.length > 1 ? 's' : ''} importado${toAdd.length > 1 ? 's' : ''}`;
+  const skip   = skipped ? `, ${skipped} ya existía${skipped > 1 ? 'n' : ''}` : '';
+  showToast(added + skip, 'success');
+});
+
+function showToast(msg, type = 'info') {
+  let toast = document.getElementById('backup-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'backup-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.className   = `backup-toast toast-${type} vis`;
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('vis'), 3500);
+}
+
 // ── Download helper ───────────────────────────────────────────────────────────
 function downloadJSON(data, filename) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
