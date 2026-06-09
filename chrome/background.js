@@ -61,7 +61,7 @@ async function runAnalysis(tabId, cleanUrl, extractAndBuild, postProcess = null)
     const { userMessage, extra } = extractResult;
     let   { candidateName }  = extractResult;
     const activeSystemPrompt = await getActiveSystemPrompt();
-    const responseText       = await callAI(settings, activeSystemPrompt, userMessage);
+    const responseText       = await callAI(settings, activeSystemPrompt, userMessage, { includeHighlights: true });
     let result = parseAnalysisResponse(responseText);
 
     if (postProcess) {
@@ -72,8 +72,8 @@ async function runAnalysis(tabId, cleanUrl, extractAndBuild, postProcess = null)
       }
     }
 
-    const { matchPct, verdict, summary, fullAnalysis } = result;
-    const tabEntry = { matchPct, verdict, summary, candidateName };
+    const { matchPct, verdict, summary, fullAnalysis, highlights } = result;
+    const tabEntry = { matchPct, verdict, summary, candidateName, highlights };
     const urlEntry = { ...tabEntry, fullAnalysis, timestamp: Date.now() };
 
     const toStore = {
@@ -179,13 +179,14 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         try {
           const liData = await extractLinkedInFromUrl(ashbyLinkedInUrl);
           if (!liData) return null;
-          const liResponse = await callAI(settings, systemPrompt, buildUserMessage(liData));
+          const liResponse = await callAI(settings, systemPrompt, buildUserMessage(liData), { includeHighlights: true });
           const liResult   = parseAnalysisResponse(liResponse);
           let result;
           if (liResult.verdict !== ashbyResult.verdict || ashbyResult.matchPct < 70) {
             const synthResponse = await callAI(settings, systemPrompt,
               buildSynthesisMessage(ashbyResult, liResult));
-            result = parseAnalysisResponse(synthResponse);
+            const synthResult = parseAnalysisResponse(synthResponse);
+            result = { ...synthResult, highlights: synthResult.highlights || liResult.highlights || null };
           } else {
             result = liResult;
           }

@@ -19,8 +19,11 @@ function clearStatus() {
 }
 
 // ── Main action button state ──────────────────────────────────────────────────
-let autoAnalyzeOn   = true;
-let currentPageType = 'other'; // 'linkedin' | 'ashby' | 'other'
+let autoAnalyzeOn    = true;
+let currentPageType  = 'other'; // 'linkedin' | 'ashby' | 'other'
+let highlightEnabled = true;
+let lastHighlights   = null;
+let activeTabId      = null;
 
 function setMainAction(state) {
   const btn          = document.getElementById('analyze-btn');
@@ -177,9 +180,9 @@ async function analyzeCandidate() {
     btn.textContent = 'Analyzing with AI…';
     btn.style.setProperty('--pct', '60%');
     const activeSystemPrompt = await getActiveSystemPrompt();
-    const responseText       = await callAI(settings, activeSystemPrompt, userMessage);
+    const responseText       = await callAI(settings, activeSystemPrompt, userMessage, { includeHighlights: true });
 
-    let { matchPct, verdict, summary, fullAnalysis } = parseAnalysisResponse(responseText);
+    let { matchPct, verdict, summary, fullAnalysis, highlights } = parseAnalysisResponse(responseText);
 
     // ── Cross-platform synthesis (Ashby + LinkedIn) ───────────────────────────
     if (isAshby && ashbyLinkedInUrl) {
@@ -190,15 +193,20 @@ async function analyzeCandidate() {
         if (liData) {
           btn.textContent = 'Cross-referencing sources…';
           btn.style.setProperty('--pct', '85%');
-          const liResponse = await callAI(settings, activeSystemPrompt, buildUserMessage(liData));
+          const liResponse = await callAI(settings, activeSystemPrompt, buildUserMessage(liData), { includeHighlights: true });
           const liResult   = parseAnalysisResponse(liResponse);
 
           if (liResult.verdict !== verdict || matchPct < 70) {
             const synthResponse = await callAI(settings, activeSystemPrompt,
               buildSynthesisMessage({ matchPct, verdict, summary }, liResult));
-            ({ matchPct, verdict, summary, fullAnalysis } = parseAnalysisResponse(synthResponse));
+            const synthResult = parseAnalysisResponse(synthResponse);
+            matchPct     = synthResult.matchPct;
+            verdict      = synthResult.verdict;
+            summary      = synthResult.summary;
+            fullAnalysis = synthResult.fullAnalysis;
+            highlights   = synthResult.highlights || liResult.highlights || null;
           } else {
-            ({ matchPct, verdict, summary, fullAnalysis } = liResult);
+            ({ matchPct, verdict, summary, fullAnalysis, highlights } = liResult);
           }
           if (liData.profile?.name) candidateName = liData.profile.name;
         }
@@ -206,8 +214,8 @@ async function analyzeCandidate() {
     }
 
     await chrome.storage.local.set({
-      [`analysis_${tab.id}`]:   { matchPct, verdict, summary, candidateName },
-      [`urlcache_${cleanUrl}`]: { matchPct, verdict, summary, candidateName, fullAnalysis, timestamp: Date.now() },
+      [`analysis_${tab.id}`]:   { matchPct, verdict, summary, candidateName, highlights },
+      [`urlcache_${cleanUrl}`]: { matchPct, verdict, summary, candidateName, fullAnalysis, highlights, timestamp: Date.now() },
       lastAnalysis:             fullAnalysis,
       lastCandidateName:        candidateName,
       lastVerdict:              verdict,
@@ -216,6 +224,7 @@ async function analyzeCandidate() {
     });
 
     showAnalysisResult(matchPct, verdict, summary);
+    if (isLI) await handleHighlights(tab.id, highlights);
     if (isAshby) await showLinkedInLink(tab.id);
 
   } catch (err) {
@@ -223,6 +232,105 @@ async function analyzeCandidate() {
     showError(err.message);
     setMainAction('run');
   }
+}
+
+// ── Highlight helpers ─────────────────────────────────────────────────────────
+async function applyHighlightsToTab(tabId, hl) {
+  const pos = hl?.positive || [];
+  const neg = hl?.negative || [];
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    func: (pos, neg) => {
+      document.querySelectorAll('mark.ch-hl').forEach(m =>
+        m.replaceWith(document.createTextNode(m.textContent)));
+      if (!pos.length && !neg.length) return;
+      if (!document.getElementById('ch-hl-style')) {
+        const s = document.createElement('style');
+        s.id = 'ch-hl-style';
+        s.textContent = 'mark.ch-hl-pos{background:rgba(0,180,80,0.25);border-radius:2px;color:inherit}mark.ch-hl-neg{background:rgba(220,60,40,0.20);border-radius:2px;color:inherit}';
+        document.head.appendChild(s);
+      }
+      const walk = (node, term, cls) => {
+        if (node.nodeType === 3) {
+          const idx = node.textContent.toLowerCase().indexOf(term.toLowerCase());
+          if (idx < 0) return;
+          const mark = document.createElement('mark');
+          mark.className = 'ch-hl ' + cls;
+          const after = node.splitText(idx);
+          after.splitText(term.length);
+          const clone = after.cloneNode();
+          after.parentNode.insertBefore(mark, after);
+          mark.appendChild(clone);
+          after.remove();
+        } else if (!['SCRIPT','STYLE','MARK'].includes(node.tagName)) {
+          [...node.childNodes].forEach(c => walk(c, term, cls));
+        }
+      };
+      pos.forEach(t => walk(document.body, t, 'ch-hl-pos'));
+      neg.forEach(t => walk(document.body, t, 'ch-hl-neg'));
+    },
+    args: [pos, neg],
+  }).catch(() => {});
+}
+
+async function clearHighlightsOnTab(tabId) {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    func: () => {
+      document.querySelectorAll('mark.ch-hl').forEach(m =>
+        m.replaceWith(document.createTextNode(m.textContent)));
+    },
+  }).catch(() => {});
+}
+
+function updateHighlightToggleBtn() {
+  const btn = document.getElementById('highlight-toggle');
+  if (!btn) return;
+  if (highlightEnabled) {
+    btn.style.borderColor = '#0073b1';
+    btn.style.color       = '#0073b1';
+    btn.style.background  = '#f0f7ff';
+    btn.textContent       = '🔍 Highlight terms';
+  } else {
+    btn.style.borderColor = '#ddd';
+    btn.style.color       = '#555';
+    btn.style.background  = 'none';
+    btn.textContent       = '🔍 Highlight terms (off)';
+  }
+}
+
+async function handleHighlights(tabId, hl) {
+  lastHighlights = hl;
+  const hlRow = document.getElementById('hl-row');
+  if (!hl || (!hl.positive?.length && !hl.negative?.length)) {
+    if (hlRow) hlRow.style.display = 'none';
+    return;
+  }
+  if (hlRow) hlRow.style.display = '';
+  updateHighlightToggleBtn();
+  if (highlightEnabled) await applyHighlightsToTab(tabId, hl);
+}
+
+document.getElementById('highlight-toggle').addEventListener('click', async () => {
+  highlightEnabled = !highlightEnabled;
+  await chrome.storage.local.set({ highlightEnabled });
+  updateHighlightToggleBtn();
+  if (!activeTabId) return;
+  if (highlightEnabled && lastHighlights) {
+    await applyHighlightsToTab(activeTabId, lastHighlights);
+  } else {
+    await clearHighlightsOnTab(activeTabId);
+  }
+});
+
+// ── "Already saved" check ─────────────────────────────────────────────────────
+async function checkIfSaved(url) {
+  const { projects = [] } = await chrome.storage.local.get('projects');
+  for (const proj of projects) {
+    if ((proj.candidates || []).find(c => c.url === url))
+      return { projectName: proj.name };
+  }
+  return null;
 }
 
 function showAnalysisResult(matchPct, verdict, summary) {
@@ -420,10 +528,11 @@ const ASHBY_CANDIDATE_RE = /app\.ashbyhq\.com\/.*\/candidates\/[^/?#]+/;
 (async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-  const { autoAnalyze, roleConfigs, ashbyKey } = await chrome.storage.local.get([
-    'autoAnalyze', 'roleConfigs', 'ashbyKey',
+  const { autoAnalyze, roleConfigs, ashbyKey, highlightEnabled: hlEnabled } = await chrome.storage.local.get([
+    'autoAnalyze', 'roleConfigs', 'ashbyKey', 'highlightEnabled',
   ]);
-  autoAnalyzeOn = autoAnalyze !== false;
+  autoAnalyzeOn    = autoAnalyze !== false;
+  highlightEnabled = hlEnabled !== false;
 
   // Version badge
   const versionTag = document.getElementById('version-tag');
@@ -445,8 +554,24 @@ const ASHBY_CANDIDATE_RE = /app\.ashbyhq\.com\/.*\/candidates\/[^/?#]+/;
 
   if (!isLI && !isAshby) return;
 
-  // Track page type for setMainAction visibility logic
+  activeTabId     = tab.id;
   currentPageType = isLI ? 'linkedin' : 'ashby';
+
+  // Check if already saved in a project (LinkedIn only)
+  if (isLI) {
+    checkIfSaved(cleanUrl).then(saved => {
+      if (!saved) return;
+      const ind  = document.getElementById('saved-indicator');
+      const link = document.getElementById('saved-project-link');
+      if (!ind || !link) return;
+      link.textContent = saved.projectName;
+      link.onclick = (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: chrome.runtime.getURL('projects.html') });
+      };
+      ind.style.display = 'block';
+    });
+  }
 
   setMainAction('run');
 
@@ -454,6 +579,7 @@ const ASHBY_CANDIDATE_RE = /app\.ashbyhq\.com\/.*\/candidates\/[^/?#]+/;
   const byTab = (await chrome.storage.local.get(`analysis_${tab.id}`))[`analysis_${tab.id}`];
   if (byTab) {
     showAnalysisResult(byTab.matchPct, byTab.verdict, byTab.summary);
+    if (isLI) await handleHighlights(tab.id, byTab.highlights || null);
     if (isAshby) await showLinkedInLink(tab.id);
     return;
   }
@@ -462,6 +588,7 @@ const ASHBY_CANDIDATE_RE = /app\.ashbyhq\.com\/.*\/candidates\/[^/?#]+/;
   const byUrl = (await chrome.storage.local.get(`urlcache_${cleanUrl}`))[`urlcache_${cleanUrl}`];
   if (byUrl) {
     showAnalysisResult(byUrl.matchPct, byUrl.verdict, byUrl.summary);
+    if (isLI) await handleHighlights(tab.id, byUrl.highlights || null);
     if (isAshby) await showLinkedInLink(tab.id);
     return;
   }
@@ -499,6 +626,7 @@ function showAnalyzingSpinner(tabId) {
       area.className = '';
       const c = changes[`analysis_${tabId}`].newValue;
       showAnalysisResult(c.matchPct, c.verdict, c.summary);
+      if (isLI) handleHighlights(tabId, c.highlights || null);
     }
   });
 }

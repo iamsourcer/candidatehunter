@@ -104,13 +104,17 @@ export function buildUserMessage(profile) {
   ].join('\n');
 }
 
-export async function callAI(settings, systemPrompt, userMessage) {
+export async function callAI(settings, systemPrompt, userMessage, opts = {}) {
+  let effectivePrompt = systemPrompt;
+  if (opts.includeHighlights) {
+    effectivePrompt += '\n\nIMPORTANT: In your JSON line add a "highlights" key: {"match_pct":...,"verdict":...,"summary":...,"highlights":{"positive":["exact phrase 1","exact phrase 2"],"negative":["red flag 1"]}}. positive: 3-6 exact phrases from the profile supporting candidacy. negative: 1-4 exact red-flag phrases. Use phrases exactly as they appear in the profile.';
+  }
   switch (settings.provider) {
     case 'gemini':
       return callGemini(
         settings.geminiKey,
         settings.geminiModel || 'gemini-1.5-flash',
-        systemPrompt,
+        effectivePrompt,
         userMessage,
       );
     case 'openai-compat':
@@ -118,19 +122,20 @@ export async function callAI(settings, systemPrompt, userMessage) {
         settings.openaiBaseUrl || 'https://api.deepseek.com',
         settings.openaiKey,
         settings.openaiModel  || 'deepseek-chat',
-        systemPrompt,
+        effectivePrompt,
         userMessage,
       );
     default: // 'anthropic'
       return callAnthropic(
         settings.anthropicKey || settings.apiKey || '',
-        systemPrompt,
+        effectivePrompt,
         userMessage,
+        settings.anthropicModel || 'claude-sonnet-4-6',
       );
   }
 }
 
-export async function callAnthropic(key, systemPrompt, userMessage) {
+export async function callAnthropic(key, systemPrompt, userMessage, model = 'claude-sonnet-4-6') {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -140,7 +145,7 @@ export async function callAnthropic(key, systemPrompt, userMessage) {
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model:       'claude-sonnet-4-6',
+      model,
       max_tokens:  2500,
       temperature: 0,
       system:      systemPrompt,
@@ -202,7 +207,7 @@ export function parseAnalysisResponse(text) {
   const part1       = (delimIdx >= 0 ? text.slice(0, delimIdx) : text).trim();
   const fullAnalysis = delimIdx >= 0 ? text.slice(delimIdx + 10).trim() : text.trim();
 
-  let matchPct = 50, verdict = 'ARCHIVE', summary = 'Analysis complete.';
+  let matchPct = 50, verdict = 'ARCHIVE', summary = 'Analysis complete.', highlights = null;
 
   try {
     const jsonLine = part1.split('\n').find(l => l.trim().startsWith('{'));
@@ -214,10 +219,15 @@ export function parseAnalysisResponse(text) {
         verdict = parsed.verdict;
       if (typeof parsed.summary === 'string' && parsed.summary.trim())
         summary = parsed.summary.trim();
+      if (parsed.highlights && typeof parsed.highlights === 'object')
+        highlights = {
+          positive: Array.isArray(parsed.highlights.positive) ? parsed.highlights.positive : [],
+          negative: Array.isArray(parsed.highlights.negative) ? parsed.highlights.negative : [],
+        };
     }
   } catch (_) {}
 
-  return { matchPct, verdict, summary, fullAnalysis };
+  return { matchPct, verdict, summary, fullAnalysis, highlights };
 }
 
 export async function getActiveSystemPrompt() {

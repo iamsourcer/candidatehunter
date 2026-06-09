@@ -80,7 +80,7 @@ function showProviderSection(provider) {
 document.addEventListener('DOMContentLoaded', () => {
   const keys = [
     'provider',
-    'anthropicKey', 'apiKey',
+    'anthropicKey', 'apiKey', 'anthropicModel',
     'openaiBaseUrl', 'openaiKey', 'openaiModel',
     'geminiKey', 'geminiModel',
     'systemPrompt', 'companyContext', 'autoAnalyze',
@@ -94,6 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('anthropic-key').value =
       data.anthropicKey || data.apiKey || '';
+    document.getElementById('anthropic-model').value =
+      data.anthropicModel || 'claude-sonnet-4-6';
     document.getElementById('openai-base-url').value =
       data.openaiBaseUrl || 'https://api.deepseek.com';
     document.getElementById('openai-key').value   = data.openaiKey   || '';
@@ -109,6 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     highlightActivePreset(data.openaiBaseUrl || '', data.openaiModel || '');
     renderRoleList(data.roleConfigs || []);
+
+    // Show Quick Start banner if no API key configured
+    const hasKey = data.anthropicKey || data.apiKey || data.openaiKey || data.geminiKey;
+    if (!hasKey) document.getElementById('quickstart-banner').style.display = '';
   });
 });
 
@@ -117,10 +123,22 @@ document.getElementById('provider-select').addEventListener('change', (e) => {
   showProviderSection(e.target.value);
 });
 
+// ── Quick Start button ────────────────────────────────────────────────────────
+document.getElementById('quickstart-groq-btn').addEventListener('click', () => {
+  document.getElementById('provider-select').value = 'openai-compat';
+  showProviderSection('openai-compat');
+  document.getElementById('openai-base-url').value = 'https://api.groq.com/openai';
+  document.getElementById('openai-model').value    = 'llama-3.3-70b-versatile';
+  highlightActivePreset('https://api.groq.com/openai', 'llama-3.3-70b-versatile');
+  document.getElementById('quickstart-banner').style.display = 'none';
+  document.getElementById('openai-key').focus();
+  document.getElementById('openai-key').scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
 // ── OpenAI-compatible presets ─────────────────────────────────────────────────
 const PRESETS = {
   deepseek: { url: 'https://api.deepseek.com',      model: 'deepseek-chat' },
-  groq:     { url: 'https://api.groq.com/openai',   model: 'deepseek-r1-distill-llama-70b' },
+  groq:     { url: 'https://api.groq.com/openai',   model: 'llama-3.3-70b-versatile' },
   openai:   { url: 'https://api.openai.com',         model: 'gpt-4o-mini' },
 };
 
@@ -157,12 +175,13 @@ document.getElementById('save-btn').addEventListener('click', () => {
 
   chrome.storage.local.set({
     provider,
-    anthropicKey:  document.getElementById('anthropic-key').value.trim(),
-    openaiBaseUrl: document.getElementById('openai-base-url').value.trim(),
-    openaiKey:     document.getElementById('openai-key').value.trim(),
-    openaiModel:   document.getElementById('openai-model').value.trim(),
-    geminiKey:     document.getElementById('gemini-key').value.trim(),
-    geminiModel:   document.getElementById('gemini-model').value.trim() || 'gemini-1.5-flash',
+    anthropicKey:   document.getElementById('anthropic-key').value.trim(),
+    anthropicModel: document.getElementById('anthropic-model').value,
+    openaiBaseUrl:  document.getElementById('openai-base-url').value.trim(),
+    openaiKey:      document.getElementById('openai-key').value.trim(),
+    openaiModel:    document.getElementById('openai-model').value.trim(),
+    geminiKey:      document.getElementById('gemini-key').value.trim(),
+    geminiModel:    document.getElementById('gemini-model').value.trim() || 'gemini-1.5-flash',
     systemPrompt:   document.getElementById('system-prompt').value.trim(),
     companyContext: document.getElementById('company-context').value.trim(),
     autoAnalyze:    document.getElementById('auto-analyze-toggle').checked,
@@ -260,12 +279,13 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
   const provider = document.getElementById('provider-select').value;
   const settings = {
     provider,
-    anthropicKey:  document.getElementById('anthropic-key').value.trim(),
-    openaiBaseUrl: document.getElementById('openai-base-url').value.trim(),
-    openaiKey:     document.getElementById('openai-key').value.trim(),
-    openaiModel:   document.getElementById('openai-model').value.trim(),
-    geminiKey:     document.getElementById('gemini-key').value.trim(),
-    geminiModel:   document.getElementById('gemini-model').value.trim() || 'gemini-1.5-flash',
+    anthropicKey:   document.getElementById('anthropic-key').value.trim(),
+    anthropicModel: document.getElementById('anthropic-model').value,
+    openaiBaseUrl:  document.getElementById('openai-base-url').value.trim(),
+    openaiKey:      document.getElementById('openai-key').value.trim(),
+    openaiModel:    document.getElementById('openai-model').value.trim(),
+    geminiKey:      document.getElementById('gemini-key').value.trim(),
+    geminiModel:    document.getElementById('gemini-model').value.trim() || 'gemini-1.5-flash',
   };
 
   const activeKey =
@@ -316,11 +336,12 @@ async function callAI(settings, systemPrompt, userMessage) {
         settings.anthropicKey || '',
         systemPrompt,
         userMessage,
+        settings.anthropicModel || 'claude-sonnet-4-6',
       );
   }
 }
 
-async function callAnthropic(key, systemPrompt, userMessage) {
+async function callAnthropic(key, systemPrompt, userMessage, model = 'claude-sonnet-4-6') {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -330,7 +351,7 @@ async function callAnthropic(key, systemPrompt, userMessage) {
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model:      'claude-sonnet-4-6',
+      model,
       max_tokens: 4096,
       system:     systemPrompt,
       messages:   [{ role: 'user', content: userMessage }],

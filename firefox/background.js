@@ -61,7 +61,7 @@ async function runAnalysis(tabId, cleanUrl, extractAndBuild, postProcess = null)
     const { userMessage, extra } = extractResult;
     let   { candidateName }  = extractResult;
     const activeSystemPrompt = await getActiveSystemPrompt();
-    const responseText       = await callAI(settings, activeSystemPrompt, userMessage);
+    const responseText       = await callAI(settings, activeSystemPrompt, userMessage, { includeHighlights: true });
     let result = parseAnalysisResponse(responseText);
 
     if (postProcess) {
@@ -72,9 +72,8 @@ async function runAnalysis(tabId, cleanUrl, extractAndBuild, postProcess = null)
       }
     }
 
-    const { matchPct, verdict, summary, fullAnalysis } = result;
-
-    const tabEntry = { matchPct, verdict, summary, candidateName };
+    const { matchPct, verdict, summary, fullAnalysis, highlights } = result;
+    const tabEntry = { matchPct, verdict, summary, candidateName, highlights };
     const urlEntry = { ...tabEntry, fullAnalysis, timestamp: Date.now() };
 
     const toStore = {
@@ -168,9 +167,9 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         const [res] = await chrome.scripting.executeScript({ target: { tabId }, files: ['ashby_content.js'] });
         const ashbyData = res?.result || {};
         return {
-          userMessage:      buildAshbyUserMessage(ashbyData),
-          candidateName:    ashbyData.name || 'Candidate',
-          extra:            ashbyData.linkedInUrl ? { [`ashby_li_${tabId}`]: ashbyData.linkedInUrl } : null,
+          userMessage:     buildAshbyUserMessage(ashbyData),
+          candidateName:   ashbyData.name || 'Candidate',
+          extra:           ashbyData.linkedInUrl ? { [`ashby_li_${tabId}`]: ashbyData.linkedInUrl } : null,
           ashbyLinkedInUrl: ashbyData.linkedInUrl || null,
         };
       },
@@ -180,13 +179,14 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         try {
           const liData = await extractLinkedInFromUrl(ashbyLinkedInUrl);
           if (!liData) return null;
-          const liResponse = await callAI(settings, systemPrompt, buildUserMessage(liData));
+          const liResponse = await callAI(settings, systemPrompt, buildUserMessage(liData), { includeHighlights: true });
           const liResult   = parseAnalysisResponse(liResponse);
           let result;
           if (liResult.verdict !== ashbyResult.verdict || ashbyResult.matchPct < 70) {
             const synthResponse = await callAI(settings, systemPrompt,
               buildSynthesisMessage(ashbyResult, liResult));
-            result = parseAnalysisResponse(synthResponse);
+            const synthResult = parseAnalysisResponse(synthResponse);
+            result = { ...synthResult, highlights: synthResult.highlights || liResult.highlights || null };
           } else {
             result = liResult;
           }
@@ -212,7 +212,7 @@ async function waitForProfileDOM(tabId, maxMs = 8000) {
     try {
       const [r] = await chrome.scripting.executeScript({
         target: { tabId },
-        files:  ['dom_check_linkedin.js'],
+        func:   () => !!document.querySelector('h1.text-heading-xlarge, .pv-top-card'),
       });
       if (r?.result) return;
     } catch (_) {}
@@ -226,7 +226,7 @@ async function waitForAshbyDOM(tabId, maxMs = 8000) {
     try {
       const [r] = await chrome.scripting.executeScript({
         target: { tabId },
-        files:  ['dom_check_ashby.js'],
+        func:   () => !!document.querySelector('h1') && document.readyState === 'complete',
       });
       if (r?.result) return;
     } catch (_) {}
@@ -265,12 +265,11 @@ async function pollAndExtract(tabId, extractFn, resolve) {
     try {
       const [r] = await chrome.scripting.executeScript({
         target: { tabId },
-        files:  ['dom_check_main.js'],
+        func:   () => !!document.querySelector('main'),
       });
       if (r?.result) break;
     } catch (_) {}
   }
-  // extractFn (extractExperienceFunc) is self-contained — safe to serialize
   chrome.scripting.executeScript(
     { target: { tabId }, func: extractFn },
     (results) => {

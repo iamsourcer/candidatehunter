@@ -1,4 +1,6 @@
 let activeProjectId = null;
+let filterText    = '';
+let filterVerdict = 'all';
 
 // ── Storage helpers ───────────────────────────────────────────────────────────
 async function getProjects() {
@@ -39,6 +41,8 @@ async function renderSidebar() {
   list.querySelectorAll('.project-item').forEach(el => {
     el.addEventListener('click', () => {
       activeProjectId = el.dataset.id;
+      filterText    = '';
+      filterVerdict = 'all';
       renderAll();
     });
   });
@@ -73,7 +77,14 @@ function renderMain(project, projects) {
       </div>
       <div class="empty-state">No candidates yet.<br>Add them from the extension popup on a LinkedIn profile.</div>`;
   } else {
-    const rows = project.candidates.map((c, i) => {
+    const allCandidates = project.candidates;
+    const visible = allCandidates.filter(c =>
+      (!filterText || c.name.toLowerCase().includes(filterText.toLowerCase())) &&
+      (filterVerdict === 'all' || c.verdict === filterVerdict)
+    );
+
+    const rows = visible.map((c) => {
+      const realIdx    = allCandidates.indexOf(c);
       const cls        = c.verdict === 'ADVANCE' ? 'advance' : 'archive';
       const hasAnalysis = !!c.fullAnalysis;
       return `<tr>
@@ -82,12 +93,16 @@ function renderMain(project, projects) {
         <td><span class="badge ${cls}">${c.verdict}</span></td>
         <td class="date-cell">${formatDate(c.addedAt)}</td>
         <td class="action-cell">
-          <button class="view-btn${hasAnalysis ? '' : ' disabled'}" data-idx="${i}" title="${hasAnalysis ? 'View full analysis' : 'No analysis stored'}">View</button>
-          <button class="dl-btn" data-idx="${i}" title="Download analysis JSON">↓</button>
-          <button class="remove-btn" data-idx="${i}" title="Remove">×</button>
+          <button class="view-btn${hasAnalysis ? '' : ' disabled'}" data-idx="${realIdx}" title="${hasAnalysis ? 'View full analysis' : 'No analysis stored'}">View</button>
+          <button class="dl-btn" data-idx="${realIdx}" title="Download analysis JSON">↓</button>
+          <button class="remove-btn" data-idx="${realIdx}" title="Remove">×</button>
         </td>
       </tr>`;
     }).join('');
+
+    const countText = visible.length < allCandidates.length
+      ? `<span id="filter-count" style="font-size:12px;color:#999;margin-left:4px">${visible.length} of ${allCandidates.length}</span>`
+      : `<span id="filter-count" style="font-size:12px;color:#999;margin-left:4px">${allCandidates.length} candidate${allCandidates.length !== 1 ? 's' : ''}</span>`;
 
     container.innerHTML = `
       <div class="main-header">
@@ -97,6 +112,14 @@ function renderMain(project, projects) {
           ${deleteBtn}
         </div>
       </div>
+      <div id="filter-bar" style="display:flex;gap:8px;align-items:center;margin:0 0 12px;flex-wrap:wrap">
+        <input id="filter-text" type="text" value="${esc(filterText)}" placeholder="Filter by name…"
+          style="flex:1;min-width:140px;padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;font-family:inherit">
+        <button class="verdict-filter${filterVerdict==='all'?' vf-active':''}" data-v="all">All</button>
+        <button class="verdict-filter${filterVerdict==='ADVANCE'?' vf-active':''}" data-v="ADVANCE">ADVANCE</button>
+        <button class="verdict-filter${filterVerdict==='ARCHIVE'?' vf-active':''}" data-v="ARCHIVE">ARCHIVE</button>
+        ${countText}
+      </div>
       <table>
         <thead><tr>
           <th>Candidate</th>
@@ -105,7 +128,7 @@ function renderMain(project, projects) {
           <th>Added</th>
           <th></th>
         </tr></thead>
-        <tbody>${rows}</tbody>
+        <tbody>${rows.length ? rows : '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px">No candidates match the filter.</td></tr>'}</tbody>
       </table>`;
 
     // View full analysis
@@ -148,6 +171,22 @@ function renderMain(project, projects) {
         proj.candidates.splice(idx, 1);
         await saveProjects(all);
         renderAll();
+      });
+    });
+
+    // Filter bar listeners
+    let filterDebounce;
+    document.getElementById('filter-text')?.addEventListener('input', (e) => {
+      clearTimeout(filterDebounce);
+      filterDebounce = setTimeout(() => {
+        filterText = e.target.value;
+        renderMain(project, projects);
+      }, 150);
+    });
+    container.querySelectorAll('.verdict-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterVerdict = btn.dataset.v;
+        renderMain(project, projects);
       });
     });
 
@@ -199,6 +238,8 @@ async function renderAll() {
   list.querySelectorAll('.project-item').forEach(el => {
     el.addEventListener('click', () => {
       activeProjectId = el.dataset.id;
+      filterText    = '';
+      filterVerdict = 'all';
       renderAll();
     });
   });

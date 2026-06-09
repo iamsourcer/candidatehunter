@@ -240,6 +240,22 @@
     .remove-btn { color: #ccc; font-size: 16px; line-height: 1; }
     .remove-btn:hover { color: #c0392b; background: #fde8e8; }
 
+    /* ── Filter bar ── */
+    .verdict-filter {
+      background: none;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      color: #555;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+    .verdict-filter:hover { border-color: #0073b1; color: #0073b1; }
+    .verdict-filter.vf-active { border-color: #0073b1; color: #0073b1; background: #f0f7ff; }
+
     /* ── Empty / no-selection states ── */
     .empty-state {
       text-align: center;
