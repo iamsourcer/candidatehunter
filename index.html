@@ -368,14 +368,14 @@
         <h3>Chrome Extension</h3>
         <p>For Google Chrome, Brave, Edge, Arc, and any Chromium-based browser. Manifest V3.</p>
         <a href="https://github.com/iamsourcer/candidatehunter/releases/latest/download/candidatehunter-chrome.zip" class="btn btn-chrome"><span>↓</span> Download for Chrome</a>
-        <div class="dl-version">v1.8 · Manual install (see instructions below)</div>
+        <div class="dl-version" id="dl-version-chrome">v1.8 · Manual install (see instructions below)</div>
       </div>
       <div class="dl-card firefox">
         <div class="browser-icon">🦊</div>
         <h3>Firefox Add-on</h3>
         <p>For Firefox 101+. Uses background event page for full compatibility across Firefox versions.</p>
         <a href="https://github.com/iamsourcer/candidatehunter/releases/latest/download/candidatehunter-firefox.zip" class="btn btn-firefox"><span>↓</span> Download for Firefox</a>
-        <div class="dl-version">v1.8 · Manual install (see instructions below)</div>
+        <div class="dl-version" id="dl-version-firefox">v1.8 · Manual install (see instructions below)</div>
       </div>
     </div>
     <div style="margin-top:48px">
@@ -419,6 +419,23 @@
 </footer>
 
 <script>
+  // ── Latest release version ────────────────────────────────────────────────────
+  (function () {
+    fetch('https://api.github.com/repos/iamsourcer/candidatehunter/releases/latest', {
+      headers: { Accept: 'application/vnd.github+json' }
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data?.tag_name) return;
+      const label = data.tag_name + ' · Manual install (see instructions below)';
+      const chrome  = document.getElementById('dl-version-chrome');
+      const firefox = document.getElementById('dl-version-firefox');
+      if (chrome)  chrome.textContent  = label;
+      if (firefox) firefox.textContent = label;
+    })
+    .catch(() => {});
+  })();
+
   // ── Tab switcher ──────────────────────────────────────────────────────────────
   function switchTab(id, btn) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));

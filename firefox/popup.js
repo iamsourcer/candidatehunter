@@ -425,6 +425,10 @@ const ASHBY_CANDIDATE_RE = /app\.ashbyhq\.com\/.*\/candidates\/[^/?#]+/;
   ]);
   autoAnalyzeOn = autoAnalyze !== false;
 
+  // Version badge
+  const versionTag = document.getElementById('version-tag');
+  if (versionTag) versionTag.textContent = 'v' + chrome.runtime.getManifest().version;
+
   // Show active role name
   const activeRole = (roleConfigs || []).find(r => r.isActive);
   const roleEl = document.getElementById('active-role-display');
