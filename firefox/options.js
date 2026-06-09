@@ -142,9 +142,10 @@ document.getElementById('quickstart-groq-btn').addEventListener('click', () => {
 
 // ── OpenAI-compatible presets ─────────────────────────────────────────────────
 const PRESETS = {
-  deepseek: { url: 'https://api.deepseek.com',      model: 'deepseek-chat' },
-  groq:     { url: 'https://api.groq.com/openai',   model: 'llama-3.3-70b-versatile' },
-  openai:   { url: 'https://api.openai.com',         model: 'gpt-4o-mini' },
+  deepseek:    { url: 'https://api.deepseek.com',    model: 'deepseek-chat' },
+  groq:        { url: 'https://api.groq.com/openai', model: 'llama-3.3-70b-versatile' },
+  openrouter:  { url: 'https://openrouter.ai/api',   model: 'meta-llama/llama-3.3-70b-instruct:free' },
+  openai:      { url: 'https://api.openai.com',      model: 'gpt-4o-mini' },
 };
 
 document.querySelectorAll('.preset-btn').forEach(btn => {
