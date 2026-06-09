@@ -50,10 +50,15 @@ When presented with a candidate profile, provide a structured evaluation contain
 If a candidate is a strong fit (80%+ match) and advances to an initial screen, draft a tailored, conversational interview script containing:
 
 1.  **The Intro & Solvd Positioning (Mandatory First Move — Do NOT open with a question):** The recruiter must speak first with a tight 60-second framing that locks the candidate into Solvd's model before they can say anything. Cover: what Solvd is (custom engineering studio, no SaaS, no platform), the Tooploox acquisition, the agentic AI focus, and the exact commercial model (SOW-based, engineering pod hours, abstract scoping). Only after this anchor does the recruiter ask the first question. This prevents an executive candidate from steering the call into a generic leadership pitch.
-2.  **Core Proving Questions:** Exactly 3 highly targeted questions that test the candidate's specific vulnerabilities identified in Task 1. Each question must be direct and operationally specific — no soft openers like "tell me about yourself" or "how do you stay current." Each question must force a concrete, verifiable answer on one of these three axes:
-    *   **IC Willingness & Pipeline Self-Sufficiency:** Force disclosure of what percentage of their pipeline they personally self-sourced vs. received via inbound leads, SDR support, or corporate brand recognition. Ask directly whether they have built a book of business from zero with no support structure.
-    *   **Custom SOW Scoping Experience:** Ask them to walk through the last time they personally scoped and closed a deal requiring a custom SOW — specifically how they managed the technical architect, how they priced abstract engineering hours, and how they defended premium pricing against a client pushing for a fixed-fee contract.
-    *   **IC Reality Check:** This role requires leaving any matrixed or leadership position and returning to a flat IC seat with a $1M net-new quota and zero support. Ask: "Walk me through the last time you built a book of business from zero — no existing accounts, no warm pipeline handed to you, no SDR team feeding you leads."
+2.  **Core Proving Questions:** Generate between 3 and 5 questions derived DIRECTLY from the specific red flags and mismatch points you identified in Task 1's "🔴 Why They Are a Mismatch" section. Do NOT use a pre-scripted set of generic axes. For each red flag bullet point you wrote, write at least one question that would validate or refute that specific concern for THIS candidate.
+
+    Rules:
+    *   Each question must be direct, operationally specific, and force a concrete verifiable answer — no soft openers.
+    *   If a red flag is about deal size or sales complexity: ask them to walk through a specific deal at a specific dollar size.
+    *   If a red flag is about SaaS background or product sales: ask them to describe a sale where THEY had to define scope and price abstract services without a pre-built product.
+    *   If a red flag is about relying on brand/inbound: ask for specific self-sourced pipeline percentages and how they built it.
+    *   If a red flag is about freelance/part-time history: ask them to explain the commercial structure and why they operated that way.
+    *   ALWAYS include one final question about the IC reality check regardless of the profile: the role requires operating with zero support structure, $1M net-new quota, flat IC seat.
 3.  **Compensation Alignment:** Clear parameters covering the $175k-$220k base, the $1M net-new quota, and the uncapped commission structure.
 
 ---
@@ -233,7 +238,7 @@ TASK 1 REQUIREMENTS:
 TASK 2 REQUIREMENTS:
 - Keep the 3-part structure: Intro & Positioning, Core Proving Questions, Compensation Alignment
 - The Intro section must explicitly instruct the recruiter NOT to open with a question — they must first deliver a 60-second anchor explaining what the company is and is NOT, and the exact commercial model, before the candidate speaks
-- The Core Proving Questions must contain exactly 3 questions targeting the candidate's specific vulnerabilities from Task 1. Each question must be operationally specific — no generic openers. The questions must test: (1) pipeline self-sufficiency and IC willingness, (2) experience with the specific deal motion required by this role, (3) readiness to operate with zero support structure in a flat IC seat
+- The Core Proving Questions must be derived DIRECTLY from the red flags identified in Task 1's mismatch section — not from a fixed set of generic axes. For each red flag, write at least one question that validates or refutes that specific concern for THIS candidate. Rules: no soft openers, each question must force a concrete verifiable answer, always include one final IC reality check question (zero support structure, initial $1M net-new quota, flat IC seat)
 
 WRITING RESTRICTIONS — Keep intact:
 - Same tone (scannable, direct, professional)
@@ -497,6 +502,47 @@ document.getElementById('add-role-btn').addEventListener('click', () => {
   document.getElementById('role-system-prompt').value      = '';
   document.getElementById('role-editor').classList.add('visible');
   document.getElementById('role-name-input').focus();
+});
+
+document.getElementById('upgrade-prompt-btn').addEventListener('click', async () => {
+  const context = document.getElementById('role-company-context').value.trim();
+  const fb      = document.getElementById('role-editor-feedback');
+  if (!context) { fb.textContent = 'Add company context first.'; setTimeout(() => { fb.textContent = ''; }, 3000); return; }
+
+  const provider = document.getElementById('provider-select').value;
+  const settings = {
+    provider,
+    anthropicKey:   document.getElementById('anthropic-key').value.trim(),
+    anthropicModel: document.getElementById('anthropic-model').value,
+    openaiBaseUrl:  document.getElementById('openai-base-url').value.trim(),
+    openaiKey:      document.getElementById('openai-key').value.trim(),
+    openaiModel:    document.getElementById('openai-model').value.trim(),
+    geminiKey:      document.getElementById('gemini-key').value.trim(),
+    geminiModel:    document.getElementById('gemini-model').value.trim() || 'gemini-1.5-flash',
+  };
+  const activeKey =
+    provider === 'gemini'        ? settings.geminiKey :
+    provider === 'openai-compat' ? settings.openaiKey :
+    settings.anthropicKey;
+  if (!activeKey) { fb.textContent = 'Enter API key first.'; setTimeout(() => { fb.textContent = ''; }, 3000); return; }
+
+  const btn = document.getElementById('upgrade-prompt-btn');
+  btn.disabled    = true;
+  btn.textContent = 'Upgrading…';
+  try {
+    const existingPrompt = document.getElementById('role-system-prompt').value.trim();
+    const { system, user } = buildGenerationPrompt(context, '(infer a senior IC enterprise sales hunter role from the company context above)', existingPrompt);
+    const result = await callAI(settings, system, user);
+    document.getElementById('role-system-prompt').value = result.trim();
+    fb.textContent = 'Generated ✓ — review and Save Role.';
+    setTimeout(() => { fb.textContent = ''; }, 4000);
+  } catch (err) {
+    fb.textContent = 'Error: ' + err.message;
+    setTimeout(() => { fb.textContent = ''; }, 4000);
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '↑ Upgrade Prompt';
+  }
 });
 
 document.getElementById('cancel-role-btn').addEventListener('click', () => {

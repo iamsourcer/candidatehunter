@@ -19,9 +19,8 @@
       justify-content: space-between;
       margin-bottom: 10px;
     }
-    .header-left { text-align: left; }
+    .header-left { text-align: left; position: relative; }
     h3 { margin: 0; font-size: 15px; color: #333; }
-    #active-role-display { font-size: 11px; color: #888; margin-top: 1px; }
     #settings-btn {
       background: none;
       border: none;
@@ -34,6 +33,20 @@
       flex-shrink: 0;
     }
     #settings-btn:hover { color: #0073b1; }
+
+    /* ── Role switcher dropdown ── */
+    #role-switcher { font-size: 11px; color: #0073b1; margin-top: 1px; }
+    #active-role-trigger { cursor: pointer; display: flex; align-items: center; gap: 3px; }
+    #active-role-trigger:hover #active-role-name { text-decoration: underline; }
+    #role-dropdown .rd-item {
+      padding: 7px 14px; font-size: 12px; cursor: pointer; display: flex;
+      align-items: center; gap: 6px; color: #1a1a1a; transition: background 0.1s;
+      white-space: nowrap;
+    }
+    #role-dropdown .rd-item:hover { background: #f5f6f7; }
+    #role-dropdown .rd-item.active { color: #0073b1; font-weight: 600; }
+    #role-dropdown .rd-separator { border-top: 1px solid #f0f0f0; margin: 3px 0; }
+    #role-dropdown .rd-manage { color: #888; font-size: 11px; }
 
     /* ── Action buttons ── */
     .action-btn {
@@ -216,7 +229,13 @@
   <div class="top-row">
     <div class="header-left">
       <h3>CandidateHunter <span id="version-tag" style="font-size:10px;font-weight:400;color:#bbb;letter-spacing:0.02em"></span></h3>
-      <div id="active-role-display"></div>
+      <div id="role-switcher" style="display:none">
+        <div id="active-role-trigger">
+          <span id="active-role-name"></span>
+          <span style="font-size:9px;color:#aaa">▾</span>
+        </div>
+        <div id="role-dropdown" style="display:none;position:absolute;background:#fff;border:1px solid #e0e0e0;border-radius:5px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:100;min-width:200px;padding:4px 0;left:0;top:100%"></div>
+      </div>
     </div>
     <button id="settings-btn" title="Settings">⚙</button>
   </div>

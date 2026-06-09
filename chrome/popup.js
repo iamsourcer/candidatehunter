@@ -538,10 +538,7 @@ const ASHBY_CANDIDATE_RE = /app\.ashbyhq\.com\/.*\/candidates\/[^/?#]+/;
   const versionTag = document.getElementById('version-tag');
   if (versionTag) versionTag.textContent = 'v' + chrome.runtime.getManifest().version;
 
-  // Show active role name
-  const activeRole = (roleConfigs || []).find(r => r.isActive);
-  const roleEl = document.getElementById('active-role-display');
-  if (activeRole && roleEl) roleEl.textContent = activeRole.name;
+  initRoleSwitcher(roleConfigs || []);
 
   // Show Ashby button only if configured
   const ashbyBtn = document.getElementById('ashby-btn');
@@ -612,6 +609,60 @@ async function showLinkedInLink(tabId) {
   if (!btn) return;
   btn.href         = stored;
   btn.style.display = 'block';
+}
+
+// ── Role Switcher ─────────────────────────────────────────────────────────────
+function initRoleSwitcher(configs) {
+  const switcher = document.getElementById('role-switcher');
+  const nameEl   = document.getElementById('active-role-name');
+  const dropdown = document.getElementById('role-dropdown');
+  if (!switcher || configs.length === 0) return;
+  const active = configs.find(r => r.isActive);
+  if (!active) return;
+  nameEl.textContent     = active.name;
+  switcher.style.display = '';
+
+  document.getElementById('active-role-trigger').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = dropdown.style.display !== 'none';
+    dropdown.style.display = isOpen ? 'none' : '';
+    if (!isOpen) renderRoleDropdown(configs);
+  });
+  document.addEventListener('click', () => { dropdown.style.display = 'none'; });
+}
+
+function renderRoleDropdown(configs) {
+  const dropdown = document.getElementById('role-dropdown');
+  dropdown.innerHTML = configs.map(r => `
+    <div class="rd-item${r.isActive ? ' active' : ''}" data-id="${r.id}">
+      <span style="width:12px;display:inline-block">${r.isActive ? '✓' : ''}</span>
+      ${r.name}
+    </div>
+  `).join('') + `
+    <div class="rd-separator"></div>
+    <div class="rd-item rd-manage" id="rd-manage-link">+ Manage roles…</div>
+  `;
+  dropdown.querySelectorAll('.rd-item[data-id]').forEach(el => {
+    el.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      dropdown.style.display = 'none';
+      await switchRole(el.dataset.id, configs);
+    });
+  });
+  document.getElementById('rd-manage-link').addEventListener('click', (e) => {
+    e.stopPropagation();
+    chrome.runtime.openOptionsPage();
+  });
+}
+
+async function switchRole(roleId, configs) {
+  configs.forEach(r => { r.isActive = r.id === roleId; });
+  const all       = await chrome.storage.local.get(null);
+  const cacheKeys = Object.keys(all).filter(k => k.startsWith('urlcache_'));
+  if (cacheKeys.length) await chrome.storage.local.remove(cacheKeys);
+  await chrome.storage.local.set({ roleConfigs: configs });
+  const active = configs.find(r => r.isActive);
+  if (active) document.getElementById('active-role-name').textContent = active.name;
 }
 
 function showAnalyzingSpinner(tabId) {
