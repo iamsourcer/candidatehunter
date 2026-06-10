@@ -364,13 +364,13 @@ document.getElementById('backup-file-input').addEventListener('change', async (e
   // ── Toast summary ──
   const parts = [];
   if (toAdd.length > 0)
-    parts.push(`${toAdd.length} proyecto${toAdd.length > 1 ? 's' : ''} importado${toAdd.length > 1 ? 's' : ''}${skipped ? ` (${skipped} ya existía${skipped > 1 ? 'n' : ''})` : ''}`);
+    parts.push(`${toAdd.length} project${toAdd.length > 1 ? 's' : ''} imported${skipped ? ` (${skipped} already existed)` : ''}`);
   else if (skipped > 0)
-    parts.push(`Proyectos ya existían`);
+    parts.push(`Projects already existed`);
   if (settingsRestored > 0)
-    parts.push(`configuración restaurada`);
+    parts.push(`settings restored`);
   if (parts.length === 0)
-    showToast('Nada nuevo para importar', 'info');
+    showToast('Nothing new to import', 'info');
   else
     showToast(parts.join(' · '), 'success');
 });

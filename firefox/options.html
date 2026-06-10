@@ -321,12 +321,12 @@
       <label for="role-company-context">Company Context</label>
       <textarea id="role-company-context" rows="4" style="height:100px" placeholder="Describe what the company does, sales model, target buyers…"></textarea>
       <p class="hint" style="margin:10px 0 6px;color:#3949ab;font-size:12px;background:#f0f3ff;padding:8px 10px;border-radius:4px;border-left:3px solid #5c6bc0">
-        <strong>Flujo:</strong> 1. Llenar Company Context → 2. Pegar JD abajo → 3. Click <strong>✨ Generate Prompt</strong> → revisar → Save Role
+        <strong>Flow:</strong> 1. Fill Company Context → 2. Paste JD below → 3. Click <strong>✨ Generate Prompt</strong> → review → Save Role
       </p>
-      <label for="role-jd-input">Job Description <span style="font-weight:400;color:#aaa;font-size:11px">— opcional, mejora la precisión del prompt generado</span></label>
-      <textarea id="role-jd-input" rows="5" style="height:90px;background:#fff" placeholder="Pegar la job description completa aquí…"></textarea>
+      <label for="role-jd-input">Job Description <span style="font-weight:400;color:#aaa;font-size:11px">— optional, improves prompt accuracy</span></label>
+      <textarea id="role-jd-input" rows="5" style="height:90px;background:#fff" placeholder="Paste the full job description here…"></textarea>
       <label for="role-system-prompt">System Prompt</label>
-      <textarea id="role-system-prompt" placeholder="Se genera con el botón de abajo, o pegá uno manualmente…"></textarea>
+      <textarea id="role-system-prompt" placeholder="Generated with the button below, or paste one manually…"></textarea>
       <div class="editor-btn-row">
         <button id="save-role-btn">Save Role</button>
         <button id="cancel-role-btn">Cancel</button>
@@ -339,7 +339,7 @@
   <!-- ── Generate from JD (legacy) ── -->
   <div class="generate-section">
     <h3>✨ Generate Prompt from Job Description <span style="font-weight:400;font-size:12px;color:#aaa">(legacy — use the role editor above instead)</span></h3>
-    <p class="section-hint">Para usuarios sin roles configurados. Si ya tenés roles, usá el botón "✨ Generate Prompt" dentro del editor de rol.</p>
+    <p class="section-hint">For users without role configurations. If you have roles set up, use the "✨ Generate Prompt" button inside the role editor above.</p>
 
     <label for="company-context">Company Context <span class="hint-inline">— reference for generation</span></label>
     <textarea id="company-context" rows="5" placeholder="Describe what your company does, your sales model, target buyers, compensation structure..."></textarea>
