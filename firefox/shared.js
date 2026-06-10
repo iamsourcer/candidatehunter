@@ -145,7 +145,7 @@ export async function callAnthropic(key, systemPrompt, userMessage, model = 'cla
     },
     body: JSON.stringify({
       model,
-      max_tokens:  2500,
+      max_tokens:  4096,
       temperature: 0,
       system:      systemPrompt,
       messages:    [{ role: 'user', content: userMessage }],
@@ -168,7 +168,7 @@ export async function callOpenAICompat(baseUrl, key, model, systemPrompt, userMe
     },
     body: JSON.stringify({
       model,
-      max_tokens:  2500,
+      max_tokens:  4096,
       temperature: 0,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -191,7 +191,7 @@ export async function callGemini(key, model, systemPrompt, userMessage) {
     body: JSON.stringify({
       system_instruction: { parts: [{ text: systemPrompt }] },
       contents:           [{ parts: [{ text: userMessage }] }],
-      generationConfig:   { maxOutputTokens: 2500, temperature: 0 },
+      generationConfig:   { maxOutputTokens: 4096, temperature: 0 },
     }),
   });
   if (!res.ok) {
@@ -257,6 +257,17 @@ export async function getActiveSystemPrompt() {
       .replace(/\{\{COMPANY_NAME\}\}/g, active.companyName || '')
       .replace(/\{\{COMPANY_INFO\}\}/g, active.companyContext || '')
       .replace(/\{\{JOB_DESCRIPTION\}\}/g, active.jd || '');
+  }
+  // Safety net: roles saved before the RESPONSE FORMAT section was added to the template
+  if (prompt && !prompt.includes('---FULL---')) {
+    prompt += '\n\n## RESPONSE FORMAT — MANDATORY\n' +
+      'Start your response with a single JSON object on one line (before any other text):\n' +
+      '{"match_pct": <integer 0-100>, "verdict": "ADVANCE" or "HOLD" or "LONG SHOT" or "DO NOT ADVANCE", ' +
+      '"summary": "2-3 sentences.", "highlights": {"positive": ["exact phrase from profile"], "negative": ["red flag phrase"]}, ' +
+      '"suggest_terms": ["missing skill"]}\n' +
+      'Then on its own line output the literal text: ---FULL---\n' +
+      'Then provide OUTPUT 1 (Match Assessment), OUTPUT 2 (Phone Screen if ADVANCE), OUTPUT 3 (Red Flag Summary).\n' +
+      'Do NOT output any text before the JSON line.';
   }
   return prompt;
 }

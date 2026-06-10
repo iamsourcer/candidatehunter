@@ -299,7 +299,27 @@ boost, strong fit, perfect fit.
 Do not carry scoring logic, example outputs, verdicts, or candidate
 details from one session into another. Each candidate profile is
 evaluated fresh against the locked Section A and Section B context only.
-Prior session outputs are not evidence and cannot be referenced.`;
+Prior session outputs are not evidence and cannot be referenced.
+
+---
+
+## RESPONSE FORMAT — MANDATORY
+
+Every response to a candidate evaluation MUST follow this exact two-part structure:
+
+**Part 1 — Machine-readable digest (first line, before any other text):**
+Output a single JSON object on one line (no line breaks inside):
+{"match_pct": <integer 0-100>, "verdict": "ADVANCE" or "HOLD" or "LONG SHOT" or "DO NOT ADVANCE", "summary": "2-3 sentences.", "highlights": {"positive": ["exact phrase from profile"], "negative": ["red flag phrase"]}, "suggest_terms": ["missing skill"]}
+
+- highlights.positive: 3-6 exact phrases copied verbatim from the profile that support the candidacy
+- highlights.negative: 1-4 exact phrases copied verbatim from the profile that are red flags
+- suggest_terms: 3-5 skills/keywords that SHOULD appear in a strong candidate but are ABSENT from this profile
+
+**Part 2 — Full evaluation:**
+On its own line, output the literal text: ---FULL---
+Then provide OUTPUT 1 (Match Assessment with full scoring breakdown), OUTPUT 2 (Phone Screen Script — only if verdict is ADVANCE), OUTPUT 3 (Red Flag Summary).
+
+Do NOT output any text before the JSON line. The JSON digest is required in every response and must appear as the very first line.`;
 
 // ── Provider section visibility ───────────────────────────────────────────────
 function showProviderSection(provider) {
