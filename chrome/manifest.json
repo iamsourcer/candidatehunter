@@ -1,22 +1,36 @@
 {
   "manifest_version": 3,
   "name": "CandidateHunter",
-  "version": "2.1",
+  "version": "2.2",
   "description": "AI-powered candidate screening for LinkedIn profiles.",
   "permissions": [
     "activeTab",
     "scripting",
     "tabs",
-    "storage"
+    "storage",
+    "tabCapture",
+    "offscreen"
   ],
   "host_permissions": [
     "https://*.linkedin.com/*",
+    "https://*.deepgram.com/*",
     "https://*/*"
   ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://meet.google.com/*",
+        "https://voice.google.com/*"
+      ],
+      "js": ["live_content.js"],
+      "css": ["live_content.css"],
+      "run_at": "document_idle"
+    }
+  ],
   "options_page": "options.html",
   "action": {
     "default_popup": "popup.html"

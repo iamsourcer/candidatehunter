@@ -362,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'anthropicKey', 'apiKey', 'anthropicModel',
     'openaiBaseUrl', 'openaiKey', 'openaiModel',
     'geminiKey', 'geminiModel',
-    'autoAnalyze', 'ashbyKey', 'roleConfigs',
+    'autoAnalyze', 'ashbyKey', 'deepgramKey', 'roleConfigs',
   ];
 
   chrome.storage.local.get(keys, (data) => {
@@ -381,7 +381,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('gemini-key').value   = data.geminiKey   || '';
     document.getElementById('gemini-model').value = data.geminiModel || 'gemini-1.5-flash';
     document.getElementById('auto-analyze-toggle').checked = data.autoAnalyze !== false;
-    document.getElementById('ashby-key').value = data.ashbyKey || '';
+    document.getElementById('ashby-key').value    = data.ashbyKey    || '';
+    document.getElementById('deepgram-key').value = data.deepgramKey || '';
 
     highlightActivePreset(data.openaiBaseUrl || '', data.openaiModel || '');
     updateOpenRouterModelsRow(data.openaiBaseUrl || '', data.openaiModel || '');
@@ -482,6 +483,7 @@ document.getElementById('save-btn').addEventListener('click', () => {
     geminiModel:    document.getElementById('gemini-model').value.trim() || 'gemini-1.5-flash',
     autoAnalyze:    document.getElementById('auto-analyze-toggle').checked,
     ashbyKey:       document.getElementById('ashby-key').value.trim(),
+    deepgramKey:    document.getElementById('deepgram-key').value.trim(),
   }, () => {
     flash('Saved ✓', '');
   });
@@ -821,3 +823,4 @@ setupAutoSave('anthropic-key', 'anthropicKey');
 setupAutoSave('openai-key',    'openaiKey');
 setupAutoSave('gemini-key',    'geminiKey');
 setupAutoSave('ashby-key',     'ashbyKey');
+setupAutoSave('deepgram-key',  'deepgramKey');

@@ -1,6 +1,129 @@
-import { buildUserMessage, buildAshbyUserMessage, buildSynthesisMessage, callAI, parseAnalysisResponse, extractExperienceFunc, extractLinkedInFromUrl, getActiveSystemPrompt } from './shared.js';
+import { buildUserMessage, buildAshbyUserMessage, buildSynthesisMessage, callAI, callAnthropic, callOpenAICompat, callGemini, parseAnalysisResponse, extractExperienceFunc, extractLinkedInFromUrl, getActiveSystemPrompt, buildLiveSuggestionMessage } from './shared.js';
 
 const inProgress = new Map();
+
+// ── Live session state ────────────────────────────────────────────────────────
+let liveSessionTabId = null;
+let offscreenCreated = false;
+let liveTranscriptBuffer = { recruiter: '', candidate: '' };
+let liveSuggestionPending = false;
+
+async function ensureOffscreen() {
+  if (offscreenCreated) return;
+  const offscreenUrl = chrome.runtime.getURL('offscreen.html');
+  const existing = await chrome.offscreen.getContexts({
+    contextTypes: ['OFFSCREEN_DOCUMENT'],
+    documentUrls: [offscreenUrl],
+  }).catch(() => []);
+  if (!existing.length) {
+    await chrome.offscreen.createDocument({
+      url: offscreenUrl,
+      reasons: ['USER_MEDIA'],
+      justification: 'Capture tab audio for live interview transcription',
+    }).catch(() => {});
+  }
+  offscreenCreated = true;
+}
+
+async function startLiveSession(tabId, streamId, deepgramKey) {
+  liveSessionTabId = tabId;
+  liveTranscriptBuffer = { recruiter: '', candidate: '' };
+  liveSuggestionPending = false;
+  if (streamId && deepgramKey) {
+    await ensureOffscreen();
+    chrome.runtime.sendMessage({ type: 'START_TAB_CAPTURE', streamId, deepgramKey }).catch(() => {});
+  }
+}
+
+function stopLiveSession() {
+  liveSessionTabId = null;
+  offscreenCreated = false;
+  liveTranscriptBuffer = { recruiter: '', candidate: '' };
+  liveSuggestionPending = false;
+  chrome.runtime.sendMessage({ type: 'STOP_TAB_CAPTURE' }).catch(() => {});
+}
+
+function appendLiveTranscript(speaker, text) {
+  liveTranscriptBuffer[speaker] = (liveTranscriptBuffer[speaker] + ' ' + text).trim();
+}
+
+async function triggerLiveSuggestion(pendingTopics, candidateCtx, tabId) {
+  if (liveSuggestionPending) return;
+  liveSuggestionPending = true;
+  try {
+    const settings = await loadSettings();
+    const activeKey = getActiveKey(settings);
+    if (!activeKey) return;
+
+    const parts = [];
+    if (liveTranscriptBuffer.recruiter) parts.push('RECRUITER: ' + liveTranscriptBuffer.recruiter);
+    if (liveTranscriptBuffer.candidate) parts.push('CANDIDATE: ' + liveTranscriptBuffer.candidate);
+    const combined = parts.join('\n\n');
+    liveTranscriptBuffer = { recruiter: '', candidate: '' };
+
+    const message = buildLiveSuggestionMessage(combined, pendingTopics, candidateCtx);
+    let response;
+    if (settings.provider === 'gemini') {
+      response = await callGemini(settings.geminiKey, settings.geminiModel || 'gemini-1.5-flash', '', message);
+    } else if (settings.provider === 'openai-compat') {
+      response = await callOpenAICompat(settings.openaiBaseUrl, settings.openaiKey, settings.openaiModel || 'deepseek-chat', '', message);
+    } else {
+      response = await callAnthropic(settings.anthropicKey || settings.apiKey, '', message, 'claude-haiku-4-5-20251001');
+    }
+
+    const jsonMatch = response.match(/\{[\s\S]*?\}/);
+    if (!jsonMatch) return;
+    const result = JSON.parse(jsonMatch[0]);
+
+    const tid = tabId || liveSessionTabId;
+    if (tid) {
+      chrome.tabs.sendMessage(tid, {
+        type: 'LIVE_SUGGESTION',
+        suggested_question: result.suggested_question || '',
+        mark_covered: result.mark_covered || [],
+        urgency: result.urgency || 'next',
+      }).catch(() => {});
+    }
+  } catch (err) {
+    console.error('[bg] live suggestion error:', err);
+  } finally {
+    liveSuggestionPending = false;
+  }
+}
+
+// ── Live session message handler ──────────────────────────────────────────────
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.type === 'LIVE_TRANSCRIPT_CHUNK') {
+    appendLiveTranscript('recruiter', msg.transcript);
+    triggerLiveSuggestion(msg.pendingTopics, msg.candidateCtx, sender.tab?.id);
+    return false;
+  }
+  if (msg.type === 'CANDIDATE_TRANSCRIPT') {
+    appendLiveTranscript('candidate', msg.transcript);
+    return false;
+  }
+  if (msg.type === 'START_LIVE_SESSION') {
+    startLiveSession(msg.tabId, msg.streamId, msg.deepgramKey)
+      .then(() => sendResponse({ ok: true }))
+      .catch(e => sendResponse({ error: e.message }));
+    return true;
+  }
+  if (msg.type === 'STOP_LIVE_SESSION') {
+    stopLiveSession();
+    sendResponse({ ok: true });
+    return false;
+  }
+  if (msg.type === 'CAPTURE_ERROR') {
+    if (liveSessionTabId) {
+      chrome.tabs.sendMessage(liveSessionTabId, {
+        type: 'LIVE_STATUS',
+        status: 'candidate_error',
+        message: msg.error,
+      }).catch(() => {});
+    }
+    return false;
+  }
+});
 
 const ASHBY_CANDIDATE_RE = /app\.ashbyhq\.com\/.*\/candidates\/[^/?#]+/;
 

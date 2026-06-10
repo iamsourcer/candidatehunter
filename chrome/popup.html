@@ -240,6 +240,41 @@
     }
     #reanalyze-link { font-size: 11px; color: #999; text-decoration: none; }
     #reanalyze-link:hover { color: #555; text-decoration: underline; }
+
+    /* ── Live panel ── */
+    #live-panel { display: none; margin-top: 4px; }
+    .live-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .live-panel-title { font-size: 13px; font-weight: 700; color: #1a1a2e; }
+    .live-badge {
+      display: none;
+      background: #ff4444;
+      color: white;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 2px 6px;
+      border-radius: 10px;
+      animation: live-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes live-pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+    #live-start-btn { background: #1a1a2e; color: white; }
+    #live-start-btn:hover { background: #0d0d1a; }
+    #live-stop-btn { background: #c0392b; color: white; }
+    #live-stop-btn:hover { background: #a93226; }
+    #live-active-info {
+      display: none;
+      text-align: center;
+      font-size: 11px;
+      color: #057642;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+    .live-hint { font-size: 11px; color: #aaa; margin-top: 6px; text-align: center; }
   </style>
 </head>
 <body>
@@ -309,6 +344,25 @@
   </div>
 
   <div id="status-area"></div>
+
+  <!-- Live Interview Co-Pilot panel (shown on Meet/Voice tabs) -->
+  <div id="live-panel">
+    <hr class="divider">
+    <div class="live-panel-header">
+      <span class="live-panel-title">🎙 Live Co-Pilot</span>
+      <span class="live-badge" id="live-badge">LIVE</span>
+    </div>
+    <p class="panel-label">Candidate for this call:</p>
+    <select id="live-candidate-select" class="panel-select">
+      <option value="">— select candidate —</option>
+    </select>
+    <div class="panel-row" style="margin-top:6px">
+      <button id="live-start-btn" class="action-btn" style="margin-bottom:0">▶ Start Session</button>
+      <button id="live-stop-btn" class="action-btn" style="margin-bottom:0;display:none">■ Stop</button>
+    </div>
+    <div id="live-active-info">✓ Sidebar active on call page</div>
+    <p class="live-hint">Deepgram key required in Settings for candidate audio</p>
+  </div>
 
   <script type="module" src="popup.js"></script>
 </body>

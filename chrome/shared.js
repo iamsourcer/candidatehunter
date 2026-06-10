@@ -346,6 +346,26 @@ export function buildSynthesisMessage(ashbyResult, linkedinResult) {
   ].join('\n');
 }
 
+export function buildLiveSuggestionMessage(transcript, pendingTopics, candidateCtx) {
+  return [
+    'You are a live interview coaching assistant. The recruiter is on a phone screen right now.',
+    `Candidate: ${candidateCtx.name}`,
+    `Pre-call verdict: ${candidateCtx.verdict} (${candidateCtx.matchPct}%)`,
+    `Red flags to probe: ${(candidateCtx.highlights?.negative || []).join(', ') || 'none identified'}`,
+    '',
+    'Topics still to cover (priority order):',
+    (pendingTopics || []).map((t, i) => `${i + 1}. ${t}`).join('\n'),
+    '',
+    'Recent conversation (RECRUITER = you, CANDIDATE = them):',
+    `"${transcript}"`,
+    '',
+    'Return ONE JSON object (no other text, no markdown):',
+    '{"suggested_question": "exact natural question to ask next", "mark_covered": ["topic string that was just addressed, if any"], "urgency": "now"}',
+    'suggested_question must be a specific, natural-sounding question that probes the top pending topic or a red flag just revealed in the transcript.',
+    'mark_covered: include the exact topic string only if it was clearly discussed in the transcript.',
+  ].join('\n');
+}
+
 export function extractLinkedInFromUrl(url) {
   return new Promise((resolve) => {
     chrome.tabs.create({ url, active: false }, (newTab) => {
