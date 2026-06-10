@@ -118,8 +118,8 @@ async function analyzeCandidate() {
     btn.textContent = 'Extracting…';
     btn.style.setProperty('--pct', '15%');
 
-    let userMessage, candidateName, extraStorage = {};
-  let ashbyLinkedInUrl = null;
+    let userMessage, candidateName, extraStorage = {}, lastProfileData = null;
+    let ashbyLinkedInUrl = null;
 
     if (isLI) {
       // ── LinkedIn extraction ──────────────────────────────────────────────
@@ -149,8 +149,9 @@ async function analyzeCandidate() {
       }
       delete profileData._debug;
 
-      userMessage   = buildUserMessage(profileData);
-      candidateName = profileData.profile?.name || 'Candidate';
+      userMessage      = buildUserMessage(profileData);
+      candidateName    = profileData.profile?.name || 'Candidate';
+      lastProfileData  = profileData;
 
     } else {
       // ── Ashby extraction: selected text + DOM metadata in parallel ────────
@@ -177,6 +178,7 @@ async function analyzeCandidate() {
       userMessage      = buildAshbyUserMessage(ashbyData);
       candidateName    = ashbyData.name || 'Candidate';
       ashbyLinkedInUrl = ashbyData.linkedInUrl || null;
+      lastProfileData  = ashbyData;
       if (ashbyLinkedInUrl) {
         extraStorage[`ashby_li_${tab.id}`] = ashbyLinkedInUrl;
       }
@@ -227,6 +229,8 @@ async function analyzeCandidate() {
       lastVerdict:              verdict,
       lastMatch:                matchPct,
       lastSuggestTerms:         suggestTerms || [],
+      lastHighlights:           highlights   || null,
+      lastProfile:              lastProfileData,
       ...extraStorage,
     });
 

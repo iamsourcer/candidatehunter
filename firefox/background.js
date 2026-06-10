@@ -64,7 +64,7 @@ async function runAnalysis(tabId, cleanUrl, extractAndBuild, postProcess = null)
   try {
     const extractResult      = await extractAndBuild(tabId, cleanUrl);
     const { userMessage, extra } = extractResult;
-    let   { candidateName }  = extractResult;
+    let   { candidateName, profileData }  = extractResult;
     const activeSystemPrompt = await getActiveSystemPrompt();
     const responseText       = await callAI(settings, activeSystemPrompt, userMessage, { includeHighlights: true });
     let result = parseAnalysisResponse(responseText);
@@ -89,6 +89,8 @@ async function runAnalysis(tabId, cleanUrl, extractAndBuild, postProcess = null)
       lastVerdict:           verdict,
       lastMatch:             matchPct,
       lastSuggestTerms:      suggestTerms || [],
+      lastHighlights:        highlights   || null,
+      lastProfile:           profileData  || null,
     };
     if (extra) Object.assign(toStore, extra);
     await chrome.storage.local.set(toStore);
@@ -152,6 +154,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       return {
         userMessage:   buildUserMessage(profileData),
         candidateName: profileData.profile?.name || 'Candidate',
+        profileData,
         extra:         null,
       };
     });
@@ -178,9 +181,10 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         const [res] = await chrome.scripting.executeScript({ target: { tabId }, files: ['ashby_content.js'] });
         const ashbyData = res?.result || {};
         return {
-          userMessage:     buildAshbyUserMessage(ashbyData),
-          candidateName:   ashbyData.name || 'Candidate',
-          extra:           ashbyData.linkedInUrl ? { [`ashby_li_${tabId}`]: ashbyData.linkedInUrl } : null,
+          userMessage:      buildAshbyUserMessage(ashbyData),
+          candidateName:    ashbyData.name || 'Candidate',
+          profileData:      ashbyData,
+          extra:            ashbyData.linkedInUrl ? { [`ashby_li_${tabId}`]: ashbyData.linkedInUrl } : null,
           ashbyLinkedInUrl: ashbyData.linkedInUrl || null,
         };
       },

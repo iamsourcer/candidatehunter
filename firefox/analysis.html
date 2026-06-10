@@ -103,6 +103,79 @@
       text-align: center;
     }
 
+    /* ── Profile section ── */
+    .profile-section {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+    .profile-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 20px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #777;
+      user-select: none;
+    }
+    .profile-toggle:hover { background: #f0f0f0; }
+    .profile-toggle-arrow { transition: transform 0.2s; font-size: 10px; color: #aaa; }
+    .profile-section.collapsed .profile-toggle-arrow { transform: rotate(-90deg); }
+    .profile-section.collapsed .profile-body { display: none; }
+    .profile-body { padding: 2px 20px 18px; }
+
+    /* Highlight pills (profile section) */
+    .hl-pills-block { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 14px; }
+    .hl-pill-pos, .hl-pill-neg, .hl-pill-miss {
+      display: inline-block;
+      padding: 3px 11px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .hl-pill-pos  { background: rgba(5,118,66,0.10);   color: #057642; border: 1px solid rgba(5,118,66,0.22); }
+    .hl-pill-neg  { background: rgba(192,57,43,0.08);  color: #c0392b; border: 1px solid rgba(192,57,43,0.20); }
+    .hl-pill-miss { background: #f3f3f3; color: #666; border: 1px solid #ddd; }
+
+    /* Inline text marks */
+    mark.hl-pos { background: rgba(5,118,66,0.16); border-radius: 2px; padding: 0 2px; color: inherit; font-weight: 600; }
+    mark.hl-neg { background: rgba(192,57,43,0.13); border-radius: 2px; padding: 0 2px; color: inherit; font-weight: 600; }
+
+    /* Profile content typography */
+    .prof-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #aaa;
+      margin: 12px 0 5px;
+    }
+    .prof-exp-item { margin-bottom: 10px; }
+    .prof-exp-header { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+    .prof-period { font-weight: 400; color: #999; font-size: 12px; }
+    .prof-exp-desc {
+      font-size: 13px;
+      color: #555;
+      margin-top: 3px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 1.55;
+    }
+    .prof-about {
+      font-size: 13px;
+      color: #555;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 1.55;
+    }
+    .prof-skills { font-size: 13px; color: #555; line-height: 1.7; }
+
     /* ── Suggested search terms ── */
     .suggest-section {
       margin-top: 32px;

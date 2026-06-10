@@ -206,6 +206,10 @@ export function parseAnalysisResponse(text) {
   const part1      = (delimIdx >= 0 ? text.slice(0, delimIdx) : text).trim();
   let fullAnalysis = delimIdx >= 0 ? text.slice(delimIdx + 10).trim() : text.trim();
 
+  console.log('[CH] RAW RESPONSE (first 400 chars):', text.slice(0, 400));
+  console.log('[CH] PART1:', part1.slice(0, 300));
+  console.log('[CH] delimIdx:', delimIdx);
+
   const VALID_VERDICTS = ['ADVANCE', 'HOLD', 'LONG SHOT', 'DO NOT ADVANCE', 'ARCHIVE'];
   let matchPct = 50, verdict = 'DO NOT ADVANCE', summary = 'Analysis complete.', highlights = null, suggestTerms = null;
 
@@ -220,6 +224,7 @@ export function parseAnalysisResponse(text) {
       }
       if (end > start) jsonStr = part1.slice(start, end + 1);
     }
+    console.log('[CH] jsonStr found:', !!jsonStr, jsonStr?.slice(0, 200));
     if (jsonStr) {
       const parsed = JSON.parse(jsonStr);
       if (typeof parsed.match_pct === 'number')
@@ -242,8 +247,9 @@ export function parseAnalysisResponse(text) {
       // Strip any orphan label line like "JSON highlights:" left behind
       fullAnalysis = fullAnalysis.replace(/^[^\n]*highlights?[^\n]*\n?/im, '').trim();
     }
-  } catch (_) {}
+  } catch (e) { console.log('[CH] parse error:', e); }
 
+  console.log('[CH] RESULT:', { matchPct, verdict, highlights, suggestTerms: suggestTerms?.length });
   return { matchPct, verdict, summary, fullAnalysis, highlights, suggestTerms };
 }
 
