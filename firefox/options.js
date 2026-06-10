@@ -201,18 +201,42 @@ specific evidence of requirement coverage instead.
 
 ### OUTPUT 2 — PHONE SCREEN SCRIPT
 
-**Recruiter Opening (speak first — 60 seconds, no questions yet):**
-Write a tight framing paragraph the recruiter reads verbatim. Must cover:
-1. What {{COMPANY_NAME}} does (from Section A)
-2. The delivery and commercial model
-3. What this specific role contributes to that model
-4. One specific detail from the candidate's profile that caught attention
-   — never generic, always traceable to their actual experience
+**Recruiter Opening (recruiter speaks first — ~30 seconds, no questions yet):**
 
-If the candidate attempts to speak or redirect before the framing is
-complete, the recruiter should acknowledge briefly and continue:
-"Absolutely — I want to make sure I give you the full picture first,
-then it's all yours."
+Write a 4-5 sentence script the recruiter reads verbatim. Sentence
+structure is FIXED — follow this order exactly:
+
+**S1 — Greeting (no filler):**
+"Hi [Candidate first name], I'm [Name] recruiting for {{COMPANY_NAME}} —
+thanks for making time."
+
+**S2-S3 — Company positioning (from Section A):**
+What {{COMPANY_NAME}} does and the commercial model in 2 tight sentences.
+No buzzwords. No generic descriptors.
+
+**S4 — Candidate-specific hook (MANDATORY — most critical sentence):**
+Name ONE concrete detail from the candidate's actual profile that is
+directly relevant to this role. Must be traceable to a specific company,
+role title, or achievement in their experience — never a generic skill.
+Use their first name in this sentence.
+Strong pattern: "[Name], your time at [Company] doing [specific thing]
+is exactly the kind of background this engagement needs."
+If no strong signal exists, name the hypothesis directly:
+"[Name], we want to test whether your background at [Company] —
+specifically [specific aspect] — maps to what we're building here."
+
+**S5 — Agenda setter:**
+"I want to give you the full picture first, then I have a few direct
+questions about your background, and of course leave time for yours.
+Sound good?"
+
+BANNED from the opening paragraph: fast-paced, collaborative, strong
+communication, detail-oriented, team player, passionate, hard-working,
+dynamic, results-driven, innovative, or any phrase that applies to any
+candidate at any company.
+
+If the candidate interrupts before S5: "Absolutely — give me 20 more
+seconds and then it's all yours."
 
 **Core Proving Questions:**
 Generate one question per Tier 1 requirement from Section B.
