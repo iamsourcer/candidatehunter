@@ -186,57 +186,21 @@ async function analyzeCandidate() {
 
     btn.textContent = 'Analyzing with AI…';
     btn.style.setProperty('--pct', '60%');
-    const activeSystemPrompt = await getActiveSystemPrompt();
-    const responseText       = await callAI(settings, activeSystemPrompt, userMessage, { includeHighlights: true });
 
-    let { matchPct, verdict, summary, fullAnalysis, highlights, suggestTerms } = parseAnalysisResponse(responseText);
-
-    // ── Cross-platform synthesis (Ashby + LinkedIn) ───────────────────────────
-    if (isAshby && ashbyLinkedInUrl) {
-      try {
-        btn.textContent = 'Loading LinkedIn profile…';
-        btn.style.setProperty('--pct', '72%');
-        const liData = await extractLinkedInFromUrl(ashbyLinkedInUrl);
-        if (liData) {
-          btn.textContent = 'Cross-referencing sources…';
-          btn.style.setProperty('--pct', '85%');
-          const liResponse = await callAI(settings, activeSystemPrompt, buildUserMessage(liData), { includeHighlights: true });
-          const liResult   = parseAnalysisResponse(liResponse);
-
-          if (liResult.verdict !== verdict || matchPct < 70) {
-            const synthResponse = await callAI(settings, activeSystemPrompt,
-              buildSynthesisMessage({ matchPct, verdict, summary }, liResult));
-            const synthResult = parseAnalysisResponse(synthResponse);
-            matchPct     = synthResult.matchPct;
-            verdict      = synthResult.verdict;
-            summary      = synthResult.summary;
-            fullAnalysis = synthResult.fullAnalysis;
-            highlights   = synthResult.highlights || liResult.highlights || null;
-            suggestTerms = synthResult.suggestTerms || liResult.suggestTerms || null;
-          } else {
-            ({ matchPct, verdict, summary, fullAnalysis, highlights, suggestTerms } = liResult);
-          }
-          if (liData.profile?.name) candidateName = liData.profile.name;
-        }
-      } catch (_) { /* si falla la síntesis, usa el resultado Ashby */ }
-    }
-
-    await chrome.storage.local.set({
-      [`analysis_${tab.id}`]:   { matchPct, verdict, summary, candidateName, highlights, suggestTerms },
-      [`urlcache_${cleanUrl}`]: { matchPct, verdict, summary, candidateName, fullAnalysis, highlights, suggestTerms, timestamp: Date.now() },
-      lastAnalysis:             fullAnalysis,
-      lastCandidateName:        candidateName,
-      lastVerdict:              verdict,
-      lastMatch:                matchPct,
-      lastSuggestTerms:         suggestTerms || [],
-      lastHighlights:           highlights   || null,
-      lastProfile:              lastProfileData,
-      ...extraStorage,
+    // Delegate AI calls to background — analysis survives if popup closes
+    chrome.runtime.sendMessage({
+      type:            'ANALYZE_NOW',
+      tabId:           tab.id,
+      cleanUrl,
+      userMessage,
+      candidateName,
+      profileData:     lastProfileData,
+      ashbyLinkedInUrl,
+      isAshby,
+    }, (response) => {
+      if (response?.error) { showError(response.error); setMainAction('run'); }
     });
-
-    showAnalysisResult(matchPct, verdict, summary);
-    if (isLI) await handleHighlights(tab.id, highlights);
-    if (isAshby) await showLinkedInLink(tab.id);
+    showAnalyzingSpinner(tab.id);
 
   } catch (err) {
     console.error(err);
@@ -741,6 +705,7 @@ function showAnalyzingSpinner(tabId) {
       const c = changes[`analysis_${tabId}`].newValue;
       showAnalysisResult(c.matchPct, c.verdict, c.summary);
       if (isLI) handleHighlights(tabId, c.highlights || null);
+      if (isAshby) showLinkedInLink(tabId);
     }
   });
 }
