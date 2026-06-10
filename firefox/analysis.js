@@ -35,7 +35,7 @@ function downloadProfile(profile, candidateName) {
   const p    = profile.profile || {};
   const name = p.name || candidateName || 'Candidate';
   const raw  = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const subtitle = [p.title, p.location].filter(Boolean).join(' · ');
+  const subtitle = [p.location, p.title].filter(Boolean);
   const about    = profile.about || '';
   const exp      = profile.experience || [];
   const edu      = profile.education  || [];
@@ -81,7 +81,7 @@ function downloadProfile(profile, candidateName) {
 </head>
 <body>
 <h1>${raw(name)}</h1>
-${subtitle ? `<div class="subtitle">${raw(subtitle)}</div>` : ''}
+${subtitle.map(s => `<div class="subtitle">${raw(s)}</div>`).join('')}
 <div class="generated">Extracted by CandidateHunter · ${new Date().toLocaleDateString()}</div>
 ${about    ? `<h2>Summary</h2><div class="about">${raw(about)}</div>` : ''}
 ${expHtml  ? `<h2>Experience</h2>${expHtml}` : ''}
@@ -118,10 +118,10 @@ function renderProfileSection(profile, highlights, suggestTerms) {
   let resumeHeader = '';
   if (profile.profile) {
     const p = profile.profile;
-    const subtitle = [p.title, p.location].filter(Boolean).join(' · ');
     resumeHeader = `<div class="prof-resume-header">
       <div class="prof-res-name">${esc(p.name || '')}</div>
-      ${subtitle ? `<div class="prof-res-subtitle">${esc(subtitle)}</div>` : ''}
+      ${p.location ? `<div class="prof-res-subtitle">${esc(p.location)}</div>` : ''}
+      ${p.title    ? `<div class="prof-res-subtitle" style="color:#888;font-size:12px">${esc(p.title)}</div>` : ''}
     </div>`;
   }
 
