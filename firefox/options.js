@@ -644,3 +644,30 @@ document.getElementById('clear-cache-btn').addEventListener('click', async () =>
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+
+// ── Auto-save API keys on blur ────────────────────────────────────────────────
+function setupAutoSave(inputId, storageKey) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  el.addEventListener('blur', () => {
+    const val = el.value.trim();
+    if (!val) return;
+    chrome.storage.local.set({ [storageKey]: val }, () => {
+      const ind = el.parentElement.querySelector('.key-saved-ind') || (() => {
+        const s = document.createElement('span');
+        s.className = 'key-saved-ind';
+        s.style.cssText = 'font-size:11px;color:#057642;margin-left:8px;font-weight:600';
+        el.insertAdjacentElement('afterend', s);
+        return s;
+      })();
+      ind.textContent = '✓ saved';
+      clearTimeout(ind._t);
+      ind._t = setTimeout(() => { ind.textContent = ''; }, 2000);
+    });
+  });
+}
+
+setupAutoSave('anthropic-key', 'anthropicKey');
+setupAutoSave('openai-key',    'openaiKey');
+setupAutoSave('gemini-key',    'geminiKey');
+setupAutoSave('ashby-key',     'ashbyKey');
