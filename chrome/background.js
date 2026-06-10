@@ -180,19 +180,24 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         await waitForAshbyDOM(tabId);
         const [res] = await chrome.scripting.executeScript({ target: { tabId }, files: ['ashby_content.js'] });
         const ashbyData = res?.result || {};
+        // Kick off LinkedIn extraction immediately — runs in parallel with Ashby AI call
+        const _liPromise = ashbyData.linkedInUrl
+          ? extractLinkedInFromUrl(ashbyData.linkedInUrl)
+          : Promise.resolve(null);
         return {
           userMessage:      buildAshbyUserMessage(ashbyData),
           candidateName:    ashbyData.name || 'Candidate',
           profileData:      ashbyData,
           extra:            ashbyData.linkedInUrl ? { [`ashby_li_${tabId}`]: ashbyData.linkedInUrl } : null,
           ashbyLinkedInUrl: ashbyData.linkedInUrl || null,
+          _liPromise,
         };
       },
       async (ashbyResult, extractResult, settings, systemPrompt) => {
-        const { ashbyLinkedInUrl, candidateName } = extractResult;
+        const { ashbyLinkedInUrl, candidateName, _liPromise } = extractResult;
         if (!ashbyLinkedInUrl) return null;
         try {
-          const liData = await extractLinkedInFromUrl(ashbyLinkedInUrl);
+          const liData = await _liPromise;
           if (!liData) return null;
           const liResponse = await callAI(settings, systemPrompt, buildUserMessage(liData), { includeHighlights: true });
           const liResult   = parseAnalysisResponse(liResponse);
