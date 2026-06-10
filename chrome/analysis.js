@@ -92,8 +92,8 @@ function renderMarkdown(text) {
 }
 
 chrome.storage.local.get(
-  ['lastAnalysis', 'lastCandidateName', 'lastVerdict', 'lastMatch'],
-  ({ lastAnalysis, lastCandidateName, lastVerdict, lastMatch }) => {
+  ['lastAnalysis', 'lastCandidateName', 'lastVerdict', 'lastMatch', 'lastSuggestTerms'],
+  ({ lastAnalysis, lastCandidateName, lastVerdict, lastMatch, lastSuggestTerms }) => {
     document.title = lastCandidateName
       ? `Analysis — ${lastCandidateName}`
       : 'Candidate Analysis';
@@ -106,11 +106,24 @@ chrome.storage.local.get(
 
     const badge = document.getElementById('verdict-badge');
     badge.textContent = lastVerdict || '';
-    badge.className   = 'verdict-badge ' +
-      (lastVerdict === 'ADVANCE' ? 'advance' : 'archive');
+    const verdictCls = { 'ADVANCE': 'advance', 'HOLD': 'hold', 'LONG SHOT': 'long-shot', 'DO NOT ADVANCE': 'archive', 'ARCHIVE': 'archive' }[lastVerdict] || 'archive';
+    badge.className   = 'verdict-badge ' + verdictCls;
 
     document.getElementById('analysis-content').innerHTML =
       renderMarkdown(fixEmojis(lastAnalysis || ''));
+
+    const terms = Array.isArray(lastSuggestTerms) ? lastSuggestTerms.filter(Boolean) : [];
+    if (terms.length) {
+      const section = document.createElement('div');
+      section.className = 'suggest-section';
+      section.innerHTML =
+        '<h3>🔍 Suggested search terms</h3>' +
+        '<p class="suggest-desc">Terms typically present in strong candidates for this role — absent in this profile:</p>' +
+        '<div class="suggest-pills">' +
+          terms.map(t => `<span class="suggest-pill">${t.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`).join('') +
+        '</div>';
+      document.getElementById('analysis-content').appendChild(section);
+    }
 
     document.getElementById('copy-btn').addEventListener('click', () => {
       const btn = document.getElementById('copy-btn');

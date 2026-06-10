@@ -50,6 +50,7 @@ async function renderSidebar() {
   // Auto-select first project if none active
   if (!activeProjectId || !projects.find(p => p.id === activeProjectId)) {
     activeProjectId = projects[0].id;
+    chrome.storage.local.set({ lastActiveProjectId: activeProjectId });
     renderAll();
     return;
   }
@@ -85,7 +86,7 @@ function renderMain(project, projects) {
 
     const rows = visible.map((c) => {
       const realIdx    = allCandidates.indexOf(c);
-      const cls        = c.verdict === 'ADVANCE' ? 'advance' : 'archive';
+      const cls        = { 'ADVANCE': 'advance', 'HOLD': 'hold', 'LONG SHOT': 'long-shot', 'DO NOT ADVANCE': 'archive', 'ARCHIVE': 'archive' }[c.verdict] || 'archive';
       const hasAnalysis = !!c.fullAnalysis;
       return `<tr>
         <td><a class="name-link" href="${esc(c.url)}" target="_blank">${esc(c.name)}</a></td>
@@ -117,6 +118,9 @@ function renderMain(project, projects) {
           style="flex:1;min-width:140px;padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;font-family:inherit">
         <button class="verdict-filter${filterVerdict==='all'?' vf-active':''}" data-v="all">All</button>
         <button class="verdict-filter${filterVerdict==='ADVANCE'?' vf-active':''}" data-v="ADVANCE">ADVANCE</button>
+        <button class="verdict-filter${filterVerdict==='HOLD'?' vf-active':''}" data-v="HOLD">HOLD</button>
+        <button class="verdict-filter${filterVerdict==='LONG SHOT'?' vf-active':''}" data-v="LONG SHOT">LONG SHOT</button>
+        <button class="verdict-filter${filterVerdict==='DO NOT ADVANCE'?' vf-active':''}" data-v="DO NOT ADVANCE">DO NOT ADVANCE</button>
         <button class="verdict-filter${filterVerdict==='ARCHIVE'?' vf-active':''}" data-v="ARCHIVE">ARCHIVE</button>
         ${countText}
       </div>
@@ -226,6 +230,7 @@ async function renderAll() {
 
   if (!activeProjectId || !projects.find(p => p.id === activeProjectId)) {
     activeProjectId = projects[0].id;
+    chrome.storage.local.set({ lastActiveProjectId: activeProjectId });
   }
 
   list.innerHTML = projects.map(p => `
@@ -238,6 +243,7 @@ async function renderAll() {
   list.querySelectorAll('.project-item').forEach(el => {
     el.addEventListener('click', () => {
       activeProjectId = el.dataset.id;
+      chrome.storage.local.set({ lastActiveProjectId: activeProjectId });
       filterText    = '';
       filterVerdict = 'all';
       renderAll();

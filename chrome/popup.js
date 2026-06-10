@@ -21,8 +21,7 @@ function clearStatus() {
 // ── Main action button state ──────────────────────────────────────────────────
 let autoAnalyzeOn    = true;
 let currentPageType  = 'other'; // 'linkedin' | 'ashby' | 'other'
-let highlightEnabled = true;
-let lastHighlights   = null;
+let lastHighlights = null;
 let activeTabId      = null;
 
 function setMainAction(state) {
@@ -65,7 +64,13 @@ document.getElementById('ashby-btn')?.addEventListener('click', () => {
 });
 
 // ── Analyze Candidate ─────────────────────────────────────────────────────────
-document.getElementById('full-analysis-btn').addEventListener('click', () => {
+document.getElementById('full-analysis-btn').addEventListener('click', async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const cleanUrl = (tab?.url || '').split('?')[0];
+  const byUrl = (await chrome.storage.local.get(`urlcache_${cleanUrl}`))[`urlcache_${cleanUrl}`];
+  if (byUrl?.suggestTerms?.length) {
+    await chrome.storage.local.set({ lastSuggestTerms: byUrl.suggestTerms });
+  }
   chrome.tabs.create({ url: chrome.runtime.getURL('analysis.html') });
 });
 
@@ -182,7 +187,7 @@ async function analyzeCandidate() {
     const activeSystemPrompt = await getActiveSystemPrompt();
     const responseText       = await callAI(settings, activeSystemPrompt, userMessage, { includeHighlights: true });
 
-    let { matchPct, verdict, summary, fullAnalysis, highlights } = parseAnalysisResponse(responseText);
+    let { matchPct, verdict, summary, fullAnalysis, highlights, suggestTerms } = parseAnalysisResponse(responseText);
 
     // ── Cross-platform synthesis (Ashby + LinkedIn) ───────────────────────────
     if (isAshby && ashbyLinkedInUrl) {
@@ -205,8 +210,9 @@ async function analyzeCandidate() {
             summary      = synthResult.summary;
             fullAnalysis = synthResult.fullAnalysis;
             highlights   = synthResult.highlights || liResult.highlights || null;
+            suggestTerms = synthResult.suggestTerms || liResult.suggestTerms || null;
           } else {
-            ({ matchPct, verdict, summary, fullAnalysis, highlights } = liResult);
+            ({ matchPct, verdict, summary, fullAnalysis, highlights, suggestTerms } = liResult);
           }
           if (liData.profile?.name) candidateName = liData.profile.name;
         }
@@ -214,12 +220,13 @@ async function analyzeCandidate() {
     }
 
     await chrome.storage.local.set({
-      [`analysis_${tab.id}`]:   { matchPct, verdict, summary, candidateName, highlights },
-      [`urlcache_${cleanUrl}`]: { matchPct, verdict, summary, candidateName, fullAnalysis, highlights, timestamp: Date.now() },
+      [`analysis_${tab.id}`]:   { matchPct, verdict, summary, candidateName, highlights, suggestTerms },
+      [`urlcache_${cleanUrl}`]: { matchPct, verdict, summary, candidateName, fullAnalysis, highlights, suggestTerms, timestamp: Date.now() },
       lastAnalysis:             fullAnalysis,
       lastCandidateName:        candidateName,
       lastVerdict:              verdict,
       lastMatch:                matchPct,
+      lastSuggestTerms:         suggestTerms || [],
       ...extraStorage,
     });
 
@@ -234,106 +241,19 @@ async function analyzeCandidate() {
   }
 }
 
-// ── Highlight helpers ─────────────────────────────────────────────────────────
-async function applyHighlightsToTab(tabId, hl) {
-  const pos = hl?.positive || [];
-  const neg = hl?.negative || [];
-  await chrome.scripting.executeScript({
-    target: { tabId },
-    func: (pos, neg) => {
-      document.querySelectorAll('mark.ch-hl').forEach(m =>
-        m.replaceWith(document.createTextNode(m.textContent)));
-      if (!pos.length && !neg.length) return;
-      if (!document.getElementById('ch-hl-style')) {
-        const s = document.createElement('style');
-        s.id = 'ch-hl-style';
-        s.textContent = 'mark.ch-hl-pos{background:rgba(0,180,80,0.25);border-radius:2px;color:inherit}mark.ch-hl-neg{background:rgba(220,60,40,0.20);border-radius:2px;color:inherit}';
-        document.head.appendChild(s);
-      }
-      const walk = (node, term, cls) => {
-        if (node.nodeType === 3) {
-          const idx = node.textContent.toLowerCase().indexOf(term.toLowerCase());
-          if (idx < 0) return;
-          const mark = document.createElement('mark');
-          mark.className = 'ch-hl ' + cls;
-          const after = node.splitText(idx);
-          after.splitText(term.length);
-          const clone = after.cloneNode();
-          after.parentNode.insertBefore(mark, after);
-          mark.appendChild(clone);
-          after.remove();
-        } else if (!['SCRIPT','STYLE','MARK'].includes(node.tagName)) {
-          [...node.childNodes].forEach(c => walk(c, term, cls));
-        }
-      };
-      pos.forEach(t => walk(document.body, t, 'ch-hl-pos'));
-      neg.forEach(t => walk(document.body, t, 'ch-hl-neg'));
-    },
-    args: [pos, neg],
-  }).catch(() => {});
-}
-
-async function clearHighlightsOnTab(tabId) {
-  await chrome.scripting.executeScript({
-    target: { tabId },
-    func: () => {
-      document.querySelectorAll('mark.ch-hl').forEach(m =>
-        m.replaceWith(document.createTextNode(m.textContent)));
-    },
-  }).catch(() => {});
-}
-
-function updateHighlightToggleBtn() {
-  const btn = document.getElementById('highlight-toggle');
-  if (!btn) return;
-  if (highlightEnabled) {
-    btn.style.borderColor = '#0073b1';
-    btn.style.color       = '#0073b1';
-    btn.style.background  = '#f0f7ff';
-    btn.textContent       = '🔍 Highlight terms';
-  } else {
-    btn.style.borderColor = '#ddd';
-    btn.style.color       = '#555';
-    btn.style.background  = 'none';
-    btn.textContent       = '🔍 Highlight terms (off)';
-  }
-}
-
-async function handleHighlights(tabId, hl) {
+// ── Highlight pills (shown in popup) ─────────────────────────────────────────
+function handleHighlights(tabId, hl) {
   lastHighlights = hl;
-  const hlRow = document.getElementById('hl-row');
-  const btn   = document.getElementById('highlight-toggle');
-  if (!hlRow || !btn) return;
-  hlRow.style.display = '';
+  const hlDiv = document.getElementById('hl-pills');
+  if (!hlDiv) return;
   const hasHL = hl && (hl.positive?.length || hl.negative?.length);
-  if (!hasHL) {
-    btn.disabled       = true;
-    btn.style.opacity  = '0.45';
-    btn.style.cursor   = 'default';
-    btn.textContent    = '🔍 Re-analyze to enable highlights';
-    btn.style.borderColor = '#ddd';
-    btn.style.color       = '#999';
-    btn.style.background  = 'none';
-    return;
-  }
-  btn.disabled      = false;
-  btn.style.opacity = '';
-  btn.style.cursor  = 'pointer';
-  updateHighlightToggleBtn();
-  if (highlightEnabled) await applyHighlightsToTab(tabId, hl);
+  if (!hasHL) { hlDiv.style.display = 'none'; return; }
+  document.getElementById('hl-pos-pills').innerHTML =
+    (hl.positive || []).map(t => `<span class="hl-pill pos">${esc(t)}</span>`).join('');
+  document.getElementById('hl-neg-pills').innerHTML =
+    (hl.negative || []).map(t => `<span class="hl-pill neg">${esc(t)}</span>`).join('');
+  hlDiv.style.display = '';
 }
-
-document.getElementById('highlight-toggle').addEventListener('click', async () => {
-  highlightEnabled = !highlightEnabled;
-  await chrome.storage.local.set({ highlightEnabled });
-  updateHighlightToggleBtn();
-  if (!activeTabId) return;
-  if (highlightEnabled && lastHighlights) {
-    await applyHighlightsToTab(activeTabId, lastHighlights);
-  } else {
-    await clearHighlightsOnTab(activeTabId);
-  }
-});
 
 // ── "Already saved" check ─────────────────────────────────────────────────────
 async function checkIfSaved(url) {
@@ -347,9 +267,10 @@ async function checkIfSaved(url) {
 
 function showAnalysisResult(matchPct, verdict, summary) {
   const verdictLine = document.getElementById('verdict-line');
-  const isAdvance   = verdict === 'ADVANCE';
-  verdictLine.textContent = `${isAdvance ? '🟢' : '🔴'} ${matchPct}% — ${verdict}`;
-  verdictLine.className   = isAdvance ? 'green' : 'red';
+  const verdictClass = { 'ADVANCE': 'green', 'HOLD': 'amber', 'LONG SHOT': 'orange', 'DO NOT ADVANCE': 'red', 'ARCHIVE': 'red' }[verdict] || 'red';
+  const verdictIcon  = verdict === 'ADVANCE' ? '🟢' : (verdict === 'HOLD' ? '🟡' : (verdict === 'LONG SHOT' ? '🟠' : '🔴'));
+  verdictLine.textContent = `${verdictIcon} ${matchPct}% — ${verdict}`;
+  verdictLine.className   = verdictClass;
   document.getElementById('summary-text').textContent = summary;
   document.getElementById('result-area').style.display = 'block';
   setMainAction('add');
@@ -379,7 +300,13 @@ async function showProjectPanel() {
   sel.innerHTML = projects.map(p =>
     `<option value="${p.id}">${p.name} (${p.candidates.length})</option>`
   ).join('') + '<option value="__new__">＋ New project…</option>';
-  if (projects.length === 0) sel.value = '__new__';
+
+  const { lastActiveProjectId } = await chrome.storage.local.get('lastActiveProjectId');
+  if (lastActiveProjectId && projects.find(p => p.id === lastActiveProjectId)) {
+    sel.value = lastActiveProjectId;
+  } else if (projects.length === 0) {
+    sel.value = '__new__';
+  }
   document.getElementById('new-project-input').style.display =
     sel.value === '__new__' ? 'block' : 'none';
 }
@@ -404,8 +331,13 @@ document.getElementById('confirm-add-btn').addEventListener('click', async () =>
 
   const byTab = (await chrome.storage.local.get(`analysis_${tab.id}`))[`analysis_${tab.id}`];
   const byUrl = (await chrome.storage.local.get(`urlcache_${cleanUrl}`))[`urlcache_${cleanUrl}`];
-  const data  = byTab || byUrl;
-  if (!data) return;
+  let data = byTab || byUrl;
+  if (!data) {
+    const stored = await chrome.storage.local.get(['lastCandidateName', 'lastVerdict', 'lastMatch', 'lastAnalysis']);
+    if (!stored.lastVerdict) { showError('Run an analysis first.'); return; }
+    data = { candidateName: stored.lastCandidateName, verdict: stored.lastVerdict,
+             matchPct: stored.lastMatch, summary: '', fullAnalysis: stored.lastAnalysis || '' };
+  }
 
   // Use user-edited name if provided, otherwise fall back to auto-detected name
   const editedName = document.getElementById('candidate-name-input')?.value?.trim();
@@ -540,11 +472,10 @@ const ASHBY_CANDIDATE_RE = /app\.ashbyhq\.com\/.*\/candidates\/[^/?#]+/;
 (async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-  const { autoAnalyze, roleConfigs, ashbyKey, highlightEnabled: hlEnabled } = await chrome.storage.local.get([
-    'autoAnalyze', 'roleConfigs', 'ashbyKey', 'highlightEnabled',
+  const { autoAnalyze, roleConfigs, ashbyKey } = await chrome.storage.local.get([
+    'autoAnalyze', 'roleConfigs', 'ashbyKey',
   ]);
-  autoAnalyzeOn    = autoAnalyze !== false;
-  highlightEnabled = hlEnabled !== false;
+  autoAnalyzeOn = autoAnalyze !== false;
 
   // Version badge
   const versionTag = document.getElementById('version-tag');
@@ -675,6 +606,10 @@ async function switchRole(roleId, configs) {
   await chrome.storage.local.set({ roleConfigs: configs });
   const active = configs.find(r => r.isActive);
   if (active) document.getElementById('active-role-name').textContent = active.name;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function showAnalyzingSpinner(tabId) {

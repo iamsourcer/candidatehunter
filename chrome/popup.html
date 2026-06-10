@@ -123,8 +123,20 @@
       text-align: center;
       margin-bottom: 7px;
     }
-    #verdict-line.green { color: #057642; }
-    #verdict-line.red   { color: #c0392b; }
+    #verdict-line.green  { color: #057642; }
+    #verdict-line.amber  { color: #c07800; }
+    #verdict-line.orange { color: #d4500a; }
+    #verdict-line.red    { color: #c0392b; }
+
+    /* ── Highlight pills ── */
+    #hl-pills { display:none; margin: 6px 0 4px; }
+    .hl-pill-row { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px; }
+    .hl-pill {
+      display:inline-block; padding:2px 8px; border-radius:10px;
+      font-size:11px; line-height:1.5; font-weight:500;
+    }
+    .hl-pill.pos { background:rgba(5,118,66,0.12); color:#057642; border:1px solid rgba(5,118,66,0.25); }
+    .hl-pill.neg { background:rgba(192,57,43,0.10); color:#c0392b; border:1px solid rgba(192,57,43,0.22); }
     #summary-text {
       font-size: 12px;
       color: #333;
@@ -254,8 +266,9 @@
     <div id="verdict-line"></div>
     <p id="summary-text"></p>
     <button id="full-analysis-btn">View Full Analysis →</button>
-    <div id="hl-row" style="display:none;text-align:center;margin-bottom:5px">
-      <button id="highlight-toggle" style="background:none;border:1px solid #ddd;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;color:#555;transition:border-color .15s,color .15s,background .15s">🔍 Highlight terms</button>
+    <div id="hl-pills">
+      <div id="hl-pos-pills" class="hl-pill-row"></div>
+      <div id="hl-neg-pills" class="hl-pill-row"></div>
     </div>
     <div id="saved-indicator" style="display:none;font-size:11px;color:#057642;text-align:center;margin:2px 0 5px">
       ✓ Saved in <a id="saved-project-link" href="#" style="color:#057642;font-weight:600;text-decoration:underline;cursor:pointer"></a>

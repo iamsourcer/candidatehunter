@@ -38,8 +38,13 @@ async function runAnalysis(tabId, cleanUrl, extractAndBuild, postProcess = null)
   const cached = (await chrome.storage.local.get(urlKey))[urlKey];
   if (cached) {
     await chrome.storage.local.set({ [`analysis_${tabId}`]: cached });
+    const cachedColor =
+      cached.verdict === 'ADVANCE'        ? '#057642' :
+      cached.verdict === 'HOLD'           ? '#c07800' :
+      cached.verdict === 'LONG SHOT'      ? '#d4500a' :
+      '#c0392b';
     chrome.action.setBadgeText({ tabId, text: `${cached.matchPct}%` });
-    chrome.action.setBadgeBackgroundColor({ tabId, color: cached.verdict === 'ADVANCE' ? '#057642' : '#c0392b' });
+    chrome.action.setBadgeBackgroundColor({ tabId, color: cachedColor });
     return;
   }
 
@@ -72,8 +77,8 @@ async function runAnalysis(tabId, cleanUrl, extractAndBuild, postProcess = null)
       }
     }
 
-    const { matchPct, verdict, summary, fullAnalysis, highlights } = result;
-    const tabEntry = { matchPct, verdict, summary, candidateName, highlights };
+    const { matchPct, verdict, summary, fullAnalysis, highlights, suggestTerms } = result;
+    const tabEntry = { matchPct, verdict, summary, candidateName, highlights, suggestTerms };
     const urlEntry = { ...tabEntry, fullAnalysis, timestamp: Date.now() };
 
     const toStore = {
@@ -83,12 +88,18 @@ async function runAnalysis(tabId, cleanUrl, extractAndBuild, postProcess = null)
       lastCandidateName:     candidateName,
       lastVerdict:           verdict,
       lastMatch:             matchPct,
+      lastSuggestTerms:      suggestTerms || [],
     };
     if (extra) Object.assign(toStore, extra);
     await chrome.storage.local.set(toStore);
 
+    const badgeColor =
+      verdict === 'ADVANCE'        ? '#057642' :
+      verdict === 'HOLD'           ? '#c07800' :
+      verdict === 'LONG SHOT'      ? '#d4500a' :
+      /* DO NOT ADVANCE / ARCHIVE */ '#c0392b';
     chrome.action.setBadgeText({ tabId, text: `${matchPct}%` });
-    chrome.action.setBadgeBackgroundColor({ tabId, color: verdict === 'ADVANCE' ? '#057642' : '#c0392b' });
+    chrome.action.setBadgeBackgroundColor({ tabId, color: badgeColor });
 
   } catch (err) {
     console.error('[bg] analysis error:', err);

@@ -26,12 +26,13 @@ export function buildAshbyUserMessage(data) {
     '',
     'Structure your response in exactly two parts separated by ---FULL---:',
     '',
-    'PART 1 — Quick summary (one JSON object on a single line):',
-    '{"match_pct": <integer 0-100>, "verdict": "ADVANCE" or "ARCHIVE", "summary": "<2-3 sentence explanation>"}',
+    'PART 1 — Quick summary (one JSON object on a single line, no other text before it):',
+    '{"match_pct": <integer 0-100>, "verdict": "ADVANCE" or "HOLD" or "LONG SHOT" or "DO NOT ADVANCE", "summary": "2-3 sentences.", "highlights": {"positive": ["exact phrase 1 from profile", "exact phrase 2"], "negative": ["red flag phrase"]}, "suggest_terms": ["missing skill 1", "missing skill 2"]}',
+    'highlights.positive: 3-6 exact phrases from the profile supporting the candidacy. highlights.negative: 1-4 exact red-flag phrases found in the profile. suggest_terms: 3-5 keywords/skills that SHOULD appear in a strong candidate but are ABSENT from this profile.',
     '',
     '---FULL---',
     '',
-    'PART 2 — Complete Task 1 assessment. If verdict is ADVANCE (match_pct >= 80), also include Task 2 Phone Screen Script.',
+    'PART 2 — Complete evaluation per OUTPUT 1 (Match Assessment with full scoring breakdown), OUTPUT 2 (Phone Screen Script — only if verdict is ADVANCE), and OUTPUT 3 (Red Flag Summary).',
   ].join('\n');
 }
 
@@ -96,19 +97,17 @@ export function buildUserMessage(profile) {
     'Structure your response in exactly two parts separated by the delimiter ---FULL---:',
     '',
     'PART 1 — Quick summary (one JSON object on a single line, no other text before it):',
-    '{"match_pct": <integer 0-100>, "verdict": "ADVANCE" or "ARCHIVE", "summary": "<2-3 sentence plain-text explanation>"}',
+    '{"match_pct": <integer 0-100>, "verdict": "ADVANCE" or "HOLD" or "LONG SHOT" or "DO NOT ADVANCE", "summary": "2-3 sentences.", "highlights": {"positive": ["exact phrase 1 from profile", "exact phrase 2"], "negative": ["red flag phrase"]}, "suggest_terms": ["missing skill 1", "missing skill 2"]}',
+    'highlights.positive: 3-6 exact phrases from the profile supporting the candidacy. highlights.negative: 1-4 exact red-flag phrases found in the profile. suggest_terms: 3-5 keywords/skills that SHOULD appear in a strong candidate but are ABSENT from this profile.',
     '',
     '---FULL---',
     '',
-    'PART 2 — Complete Task 1 assessment. If verdict is ADVANCE (match_pct >= 80), also include Task 2 Phone Screen Script.',
+    'PART 2 — Complete evaluation per OUTPUT 1 (Match Assessment with full scoring breakdown), OUTPUT 2 (Phone Screen Script — only if verdict is ADVANCE), and OUTPUT 3 (Red Flag Summary).',
   ].join('\n');
 }
 
 export async function callAI(settings, systemPrompt, userMessage, opts = {}) {
-  let effectivePrompt = systemPrompt;
-  if (opts.includeHighlights) {
-    effectivePrompt += '\n\nIMPORTANT: In your JSON line add a "highlights" key: {"match_pct":...,"verdict":...,"summary":...,"highlights":{"positive":["exact phrase 1","exact phrase 2"],"negative":["red flag 1"]}}. positive: 3-6 exact phrases from the profile supporting candidacy. negative: 1-4 exact red-flag phrases. Use phrases exactly as they appear in the profile.';
-  }
+  const effectivePrompt = systemPrompt;
   switch (settings.provider) {
     case 'gemini':
       return callGemini(
@@ -203,11 +202,12 @@ export async function callGemini(key, model, systemPrompt, userMessage) {
 }
 
 export function parseAnalysisResponse(text) {
-  const delimIdx    = text.indexOf('---FULL---');
-  const part1       = (delimIdx >= 0 ? text.slice(0, delimIdx) : text).trim();
-  const fullAnalysis = delimIdx >= 0 ? text.slice(delimIdx + 10).trim() : text.trim();
+  const delimIdx   = text.indexOf('---FULL---');
+  const part1      = (delimIdx >= 0 ? text.slice(0, delimIdx) : text).trim();
+  let fullAnalysis = delimIdx >= 0 ? text.slice(delimIdx + 10).trim() : text.trim();
 
-  let matchPct = 50, verdict = 'ARCHIVE', summary = 'Analysis complete.', highlights = null;
+  const VALID_VERDICTS = ['ADVANCE', 'HOLD', 'LONG SHOT', 'DO NOT ADVANCE', 'ARCHIVE'];
+  let matchPct = 50, verdict = 'DO NOT ADVANCE', summary = 'Analysis complete.', highlights = null, suggestTerms = null;
 
   try {
     const start = part1.indexOf('{');
@@ -224,7 +224,7 @@ export function parseAnalysisResponse(text) {
       const parsed = JSON.parse(jsonStr);
       if (typeof parsed.match_pct === 'number')
         matchPct = Math.min(100, Math.max(0, Math.round(parsed.match_pct)));
-      if (parsed.verdict === 'ADVANCE' || parsed.verdict === 'ARCHIVE')
+      if (VALID_VERDICTS.includes(parsed.verdict))
         verdict = parsed.verdict;
       if (typeof parsed.summary === 'string' && parsed.summary.trim())
         summary = parsed.summary.trim();
@@ -233,16 +233,32 @@ export function parseAnalysisResponse(text) {
           positive: Array.isArray(parsed.highlights.positive) ? parsed.highlights.positive : [],
           negative: Array.isArray(parsed.highlights.negative) ? parsed.highlights.negative : [],
         };
+      if (Array.isArray(parsed.suggest_terms))
+        suggestTerms = parsed.suggest_terms.map(t => String(t).trim()).filter(Boolean);
+      // Strip the JSON block from fullAnalysis (happens when model skips ---FULL--- delimiter)
+      const jsonInFull = fullAnalysis.indexOf(jsonStr);
+      if (jsonInFull >= 0)
+        fullAnalysis = (fullAnalysis.slice(0, jsonInFull) + fullAnalysis.slice(jsonInFull + jsonStr.length)).trim();
+      // Strip any orphan label line like "JSON highlights:" left behind
+      fullAnalysis = fullAnalysis.replace(/^[^\n]*highlights?[^\n]*\n?/im, '').trim();
     }
   } catch (_) {}
 
-  return { matchPct, verdict, summary, fullAnalysis, highlights };
+  return { matchPct, verdict, summary, fullAnalysis, highlights, suggestTerms };
 }
 
 export async function getActiveSystemPrompt() {
-  const { roleConfigs, systemPrompt } = await chrome.storage.local.get(['roleConfigs', 'systemPrompt']);
+  const { roleConfigs } = await chrome.storage.local.get(['roleConfigs']);
   const active = (roleConfigs || []).find(r => r.isActive);
-  return active?.systemPrompt || systemPrompt || '';
+  if (!active) return '';
+  let prompt = active.systemPrompt || '';
+  if (prompt.includes('{{')) {
+    prompt = prompt
+      .replace(/\{\{COMPANY_NAME\}\}/g, active.companyName || '')
+      .replace(/\{\{COMPANY_INFO\}\}/g, active.companyContext || '')
+      .replace(/\{\{JOB_DESCRIPTION\}\}/g, active.jd || '');
+  }
+  return prompt;
 }
 
 export async function ashbyFetch(apiKey, endpoint, body = {}) {
@@ -305,11 +321,11 @@ export function buildSynthesisMessage(ashbyResult, linkedinResult) {
     'Structure your response in exactly two parts separated by ---FULL---:',
     '',
     'PART 1 — Final verdict (one JSON object on a single line):',
-    '{"match_pct": <integer 0-100>, "verdict": "ADVANCE" or "ARCHIVE", "summary": "<2-3 sentence plain-text explanation>"}',
+    '{"match_pct": <integer 0-100>, "verdict": "ADVANCE" or "HOLD" or "LONG SHOT" or "DO NOT ADVANCE", "summary": "2-3 sentences.", "highlights": {"positive": ["exact phrase from profile"], "negative": ["red flag phrase"]}, "suggest_terms": ["missing skill"]}',
     '',
     '---FULL---',
     '',
-    'PART 2 — One paragraph reconciling how you weighted the two sources, then the full Task 1 assessment. If verdict is ADVANCE (match_pct >= 80), also include Task 2 Phone Screen Script.',
+    'PART 2 — One paragraph reconciling how you weighted the two sources, then the complete evaluation per OUTPUT 1 (Match Assessment), OUTPUT 2 (Phone Screen Script — only if ADVANCE), and OUTPUT 3 (Red Flag Summary).',
   ].join('\n');
 }
 

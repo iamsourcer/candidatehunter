@@ -47,8 +47,10 @@
       letter-spacing: 0.05em;
       white-space: nowrap;
     }
-    .verdict-badge.advance { background: #e6f4ea; color: #057642; }
-    .verdict-badge.archive { background: #fde8e8; color: #c0392b; }
+    .verdict-badge.advance    { background: #e6f4ea; color: #057642; }
+    .verdict-badge.hold       { background: #fff8e1; color: #c07800; }
+    .verdict-badge.long-shot  { background: #fff3e0; color: #d4500a; }
+    .verdict-badge.archive    { background: #fde8e8; color: #c0392b; }
     #copy-btn {
       background: #f5f5f5;
       border: 1px solid #ddd;
@@ -99,6 +101,37 @@
       font-size: 15px;
       padding: 60px 20px;
       text-align: center;
+    }
+
+    /* ── Suggested search terms ── */
+    .suggest-section {
+      margin-top: 32px;
+      padding: 18px 20px;
+      background: #f7f8ff;
+      border: 1px solid #d0d8f8;
+      border-radius: 8px;
+    }
+    .suggest-section h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 6px;
+      color: #2c3a9e;
+    }
+    .suggest-desc {
+      font-size: 13px;
+      color: #666;
+      margin: 0 0 12px;
+    }
+    .suggest-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .suggest-pill {
+      display: inline-block;
+      background: #eef1fd;
+      border: 1px solid #c5cff7;
+      color: #3949ab;
+      border-radius: 12px;
+      padding: 4px 14px;
+      font-size: 13px;
+      font-weight: 500;
     }
   </style>
 </head>

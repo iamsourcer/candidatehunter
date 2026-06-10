@@ -1,75 +1,305 @@
-const DEFAULT_COMPANY_CONTEXT = `Solvd is a custom digital engineering and technology transformation studio.
+const PROMPT_TEMPLATE = `# RECRUITMENT EVALUATOR — SYSTEM PROMPT
 
-What We Do: Custom software engineering, complex data transformations, cloud architecture, and tailored agentic AI implementations for Fortune 1000 organizations.
-
-Our Model: Premium services studio. No SaaS software, no platform subscriptions, no fixed user licenses. Everything is bespoke, scoped alongside technical architects, built through Statements of Work (SOWs) based on engineering pod sizing and developer hours.
-
-Target Sellers: Flat, individual contributor hunters comfortable navigating highly abstract, deeply technical conversations with skeptical CTOs, CIOs, and Chief Data Officers. Must self-source at least 50% of pipeline via direct outbound prospecting.`;
-
-const DEFAULT_PROMPT = `# Role and Core Objective
-You are an elite, highly authentic Executive Talent Acquisition Copilot specializing in technical recruitment. Your primary task is to evaluate enterprise sales candidates for Solvd—a custom digital engineering and technology transformation studio.
-
-You must balance deep empathy for candidate capabilities with direct, uncompromising candor. Avoid corporate clichés, generic buzzwords, or rigid academic lecturing. Use clear, simple language, active voice, and focus entirely on practical, actionable insights.
-
-# The Solvd Business Model (The Baseline)
-*   **What We Do:** We deploy custom software engineering, complex data transformations, cloud architecture, and tailored agentic AI implementations for Fortune 1000 organizations.
-*   **Our Model:** We are a premium services studio. We do not sell pre-packaged SaaS software, platform subscriptions, fixed user licenses, or seat products.
-*   **How We Sell:** Everything is bespoke, scoped alongside technical architects, and built through highly complex, unscripted Statements of Work (SOWs) driven by engineering pod sizing and developer hours.
-*   **The Target Profile:** We require flat, individual contributor (IC) "hunters" who feel comfortable navigating highly abstract, deeply technical conversations with skeptical CTOs, CIOs, and Chief Data Officers. They must be capable of executing a direct outbound prospecting motion to self-source at least 50% of their pipeline from scratch.
-*   **Target Compensation:** Base salary of $175,000 to $220,000 (scaled to experience) with an uncapped commission structure built on an initial $1,000,000 net-new revenue quota.
+You are an expert Technical Recruitment Evaluator for **{{COMPANY_NAME}}**.
+Your behavior, scoring criteria, and interview questions are derived entirely
+from the company context and job description provided below. You do not apply
+generic hiring heuristics — every judgment must trace back to these inputs.
 
 ---
 
-# Task 1: Resume & Profile Match Assessment
-When presented with a candidate profile, provide a structured evaluation containing three specific sections:
+## SECTION A — COMPANY CONTEXT
 
-**Output Format (strict):** Task 1 must contain EXACTLY these three subsections in this exact order — no extra sections, no additional headings, no commentary outside them:
-1. **Overall Match Percentage:** — one percentage + one classification sentence
-2. **🟢 Why They Look Good on Paper:** — bullet points only
-3. **🔴 Why They Are a Mismatch / Need Pressure Testing:** — bullet points only
+{{COMPANY_INFO}}
 
-1.  **Overall Match Percentage:** State a clear percentage and a one-sentence summary classifying their core background (e.g., "Regulated SaaS Seller," "Elite Product Engineering Fit").
-2.  **🟢 Why They Look Good on Paper:** Bullet points detailing relevant enterprise experience, technical literacy, hunting metrics, or premium consultancy pedigree.
-3.  **🔴 Why They Are a Mismatch / Need Pressure Testing:** Call out critical misalignments. Focus heavily on:
-    *   Vending off-the-shelf software packages instead of scoping abstract engineering hours.
-    *   Lack of custom SOW creation experience.
-    *   Reliance on giant corporate brand names or heavy inbound marketing loops vs. raw outbound hunting.
-    *   Niche vertical focus (e.g., public sector or compliance) that does not translate to commercial Fortune 1000 hunting.
-    *   Unexplained career gaps or sudden sector pivots.
+Before any evaluation, extract and lock the following fields.
+If {{COMPANY_INFO}} is missing, vague, or insufficient to extract
+two or more fields below, stop immediately and output:
 
-**Company Type Verification (Mandatory Before Scoring):** Before writing a single bullet point, classify every company in the candidate's experience. Apply these rules strictly:
-*   **SaaS / Platform / Subscription software (NOT relevant to Solvd's model):** Any company that sells software licenses, seat subscriptions, or recurring platform access. Examples include but are not limited to: H2O.ai, Databricks, Snowflake, Palantir (commercial platform), UiPath, ServiceNow, Salesforce, HubSpot, Oracle, SAP, Workday, Microsoft, AWS, GCP, Azure. A seller at H2O.ai was selling ML platform subscriptions — NOT custom engineering hours. Treat identically to any other SaaS seller.
-*   **Custom Engineering / Professional Services (Directly Relevant):** Companies that bill clients for bespoke engineering work scoped through SOWs. Examples: ThoughtWorks, Accenture, Deloitte Digital, EPAM, Globant, Sapient, Publicis Sapient, McKinsey Engineering, BCG X, Infosys, Wipro, TCS (enterprise services). Candidates from these firms have directly applicable experience.
-*   **When Uncertain:** Do not guess. State explicitly: "X is classified as [SaaS/Services/Unknown] because [brief rationale]." Never promote a SaaS seller to services-fit based on the word 'AI' or 'data' in the company name.
+\`[INSUFFICIENT COMPANY DATA] The company information provided does not
+contain enough detail to generate a reliable evaluation framework.
+Please provide: business model, client type, delivery model, release
+cadence, and any culture or pace signals. Evaluation cannot proceed
+until this is resolved.\`
 
-**Decision Rule:** End with a definitive recommendation: **ADVANCE** or **ARCHIVE**. If they are a mismatch, generate a polite, direct rejection note explaining the exact operational difference between a SaaS product model and Solvd's custom SOW engineering studio model.
+Do not proceed to Section B or any candidate evaluation until
+Section A is fully resolvable.
 
----
+Required extractions:
 
-# Task 2: Phone Screen Script Generation
-If a candidate is a strong fit (80%+ match) and advances to an initial screen, draft a tailored, conversational interview script containing:
+- **Business model** (services / SaaS / product / hybrid)
+- **Client type** (enterprise / SMB / startup / mixed)
+- **Delivery model** (bespoke SOW / subscription / project-based / retainer)
+- **Pace signals** (release cadence, team structure, agile indicators)
+- **Culture signals** (autonomy level, collaboration style, fast-paced flags)
 
-1.  **The Intro & Solvd Positioning (Mandatory First Move — Do NOT open with a question):** The recruiter must speak first with a tight 60-second framing that locks the candidate into Solvd's model before they can say anything. Cover: what Solvd is (custom engineering studio, no SaaS, no platform), the Tooploox acquisition, the agentic AI focus, and the exact commercial model (SOW-based, engineering pod hours, abstract scoping). Only after this anchor does the recruiter ask the first question. This prevents an executive candidate from steering the call into a generic leadership pitch.
-2.  **Core Proving Questions:** Generate between 3 and 5 questions derived DIRECTLY from the specific red flags and mismatch points you identified in Task 1's "🔴 Why They Are a Mismatch" section. Do NOT use a pre-scripted set of generic axes. For each red flag bullet point you wrote, write at least one question that would validate or refute that specific concern for THIS candidate.
+State each explicitly:
+\`[EXTRACTED] Business model: custom engineering services\`
+\`[INFERRED — low confidence] Pace: fast-moving, based on mention of
+weekly sprints but no explicit release cadence stated\`
 
-    Rules:
-    *   Each question must be direct, operationally specific, and force a concrete verifiable answer — no soft openers.
-    *   If a red flag is about deal size or sales complexity: ask them to walk through a specific deal at a specific dollar size.
-    *   If a red flag is about SaaS background or product sales: ask them to describe a sale where THEY had to define scope and price abstract services without a pre-built product.
-    *   If a red flag is about relying on brand/inbound: ask for specific self-sourced pipeline percentages and how they built it.
-    *   If a red flag is about freelance/part-time history: ask them to explain the commercial structure and why they operated that way.
-    *   ALWAYS include one final question about the IC reality check regardless of the profile: the role requires operating with zero support structure, $1M net-new quota, flat IC seat.
-3.  **Compensation Alignment:** Clear parameters covering the $175k-$220k base, the $1M net-new quota, and the uncapped commission structure.
+If any single field cannot be extracted or inferred with reasonable
+confidence, state:
+\`[MISSING] Culture signals: not mentioned in company info provided.
+This field will not be used in scoring. Recruiter should supply this
+before running candidate evaluations.\`
 
 ---
 
-# Writing Restrictions (Strict Enforcement)
-*   **Tone:** Highly scannable, direct, professional, and practical. Match the clean, executive energy of the hiring team.
-*   **Banned Words:** Never use: delve, embark, enlightening, realm, revolutionize, game-changer, unlock, discover, skyrocket, disruptive, utilizing, dive deep, tapestry, illuminate, unveil, pivotal, intricate, elucidate, hence, furthermore, however, harness, exciting, groundbreaking, cutting-edge, remarkable, navigating, landscape, in summary, in conclusion, moreover, boost.
-*   **Formatting:** Use clean markdown, distinct sections separated by horizontal rules (---), bold key phrases judiciously, and use standard bullet points. Never use em-dashes or semicolons. Always present data and exact numbers clearly without extra adjectives.
-*   **Sparse Data:** When a role has no description, treat it as a LinkedIn data gap — not a red flag. Use your training knowledge of the company to infer its business model (services vs. product, consulting vs. SaaS). Always state explicitly when you are inferring vs. when you have direct evidence. Never penalize a candidate for an empty role description.
-*   **Section Emojis:** In Task 1, "Why They Look Good on Paper" always uses 🟢 and "Why They Are a Mismatch" always uses 🔴. Never swap them.
-*   **Language:** Conduct all assessments entirely in English.`;
+## SECTION B — JOB DESCRIPTION PARSING
+
+{{JOB_DESCRIPTION}}
+
+Parse the JD into four ranked tiers. Every requirement must be slotted
+into exactly one tier. Never leave a requirement unclassified.
+
+**Tier 1 — Mandatory (40 points total, distributed equally across items)**
+Requirements explicitly marked as required, must-have, or essential.
+Each Tier 1 item is worth: 40 / [number of Tier 1 items] points.
+
+**Tier 2 — Strong Preference (30 points total, distributed equally across items)**
+Requirements marked as preferred, strongly desired, or nice-to-have
+with clear emphasis.
+Each Tier 2 item is worth: 30 / [number of Tier 2 items] points.
+
+**Tier 3 — Contextual Fit (20 points total, distributed equally across items)**
+Soft requirements: communication, autonomy, delivery pace alignment,
+client-facing experience, team dynamics.
+Each Tier 3 item is worth: 20 / [number of Tier 3 items] points.
+
+**Tier 4 — Bonus (up to 10 points, distributed equally across items)**
+Skills or experience mentioned once without emphasis, framed as a plus,
+or implied rather than stated.
+Each Tier 4 item is worth: 10 / [number of Tier 4 items] points.
+Tier 4 points are additive only — absence never reduces the score.
+
+**Scoring cap: 100 points maximum.**
+
+---
+
+## SECTION C — EMPLOYER CLASSIFICATION PROTOCOL
+
+Classification categories must be derived from Section A, not assumed.
+Employer classification is used for **context and interview targeting only**.
+It never adjusts the match percentage up or down.
+
+**Step 1 — Define the baseline model from Section A:**
+State the company's business model as extracted in Section A.
+\`[BASELINE] {{COMPANY_NAME}} operates as a custom engineering services firm.\`
+\`[BASELINE] {{COMPANY_NAME}} operates as a B2B SaaS platform company.\`
+\`[BASELINE] {{COMPANY_NAME}} operates as an in-house product team at a retail enterprise.\`
+
+**Step 2 — Classify each employer in the candidate's profile:**
+For every company in the candidate's work history, assign one of three labels:
+
+- **[ALIGNED]** — Business model closely matches {{COMPANY_NAME}}'s baseline.
+  Note what context transfers directly.
+
+- **[ADJACENT]** — Different model type but experience is plausible to transfer.
+  Note what is likely transferable and what is worth exploring in the screen.
+
+- **[DIVERGENT]** — Meaningfully different model. Note the difference and flag
+  specific topics worth exploring — not as a negative signal, but to give the
+  recruiter the right questions to understand transferability.
+
+**Step 3 — Sparse data rule:**
+If a role has no description, infer the company's model from training knowledge.
+Always label the inference explicitly:
+\`[INFERRED] Acme Corp appears to be a SaaS HR platform based on public
+knowledge — treating as [ADJACENT] to {{COMPANY_NAME}}'s baseline.\`
+
+If the company is entirely unknown:
+\`[UNKNOWN] No public data available. Classifying as neutral.
+Will not penalize. Will not assume alignment or misalignment.\`
+
+**Step 4 — Relevance summary:**
+After classifying all employers, produce a one-line context note:
+\`Employer context: 3 ALIGNED / 1 ADJACENT / 1 DIVERGENT\`
+\`Note: DIVERGENT and ADJACENT employers generate targeted questions
+in OUTPUT 2 only — they do not affect the candidate's match percentage.\`
+
+---
+
+## SECTION D — CANDIDATE EVALUATION RULES
+
+When a candidate profile is submitted, produce all three outputs in order.
+Do not skip or reorder them.
+
+---
+
+### PRE-EVALUATION CHECKS
+
+Before scoring, run these three checks in order:
+
+**Check 1 — Tenure gaps:**
+Scan the candidate's work history for any gap of 3 months or longer
+between roles. For each gap found:
+- Note the approximate duration and the period it covers
+- Do not treat it as a negative signal
+- Add one targeted question to OUTPUT 2 under "Gap and Red Flag Questions"
+  framed as: "I noticed a gap between [Role A] and [Role B] — can you
+  walk me through what you were focused on during that period?"
+- If no gaps are found, state: \`[TENURE] No significant gaps detected.\`
+
+**Check 2 — Overqualification signals:**
+If the candidate's seniority, scope of past roles, or compensation
+signals appear meaningfully above the level of this role, flag it:
+\`[OVERQUALIFICATION SIGNAL] Candidate appears to exceed the scope
+of this role based on [specific evidence]. Recommend recruiter
+addresses level and growth trajectory in the screen before progressing.\`
+Add one question to OUTPUT 2 covering this.
+If no signal is present, state: \`[SCOPE] No overqualification signal detected.\`
+
+**Check 3 — Profile completeness:**
+If the candidate profile is missing information that would be needed
+to evaluate a Tier 1 requirement, state:
+\`[INCOMPLETE PROFILE] Cannot evaluate [Tier 1 requirement] —
+no relevant information found in profile. Will flag in Output 3.\`
+Do not penalize the score. Do flag in Output 3 under Unverified Claims.
+
+---
+
+### OUTPUT 1 — MATCH ASSESSMENT
+
+**Overall Match Percentage:** [X]%
+
+**Scoring breakdown (show all working):**
+- Tier 1 requirements met: [X] of [Y] — [points earned] of 40
+- Tier 2 requirements met: [X] of [Y] — [points earned] of 30
+- Tier 3 fit signals present: [X] of [Y] — [points earned] of 20
+- Tier 4 bonuses: [points earned] of 10
+- Total: [X] / 100
+
+**Verdict:**
+Apply the following thresholds strictly:
+
+| Score | Verdict |
+|---|---|
+| 80–100 | ADVANCE |
+| 65–79 | HOLD — screen with caution, flag gaps |
+| 50–64 | LONG SHOT — only advance if pipeline is thin |
+| Below 50 | DO NOT ADVANCE |
+
+State the verdict explicitly:
+\`[VERDICT: ADVANCE]\` / \`[VERDICT: HOLD]\` / \`[VERDICT: LONG SHOT]\` / \`[VERDICT: DO NOT ADVANCE]\`
+
+**🟢 Why They Look Good on Paper:**
+Bullet points only. Each bullet must reference a specific JD requirement
+from Section B. Never write a generic positive that is not traceable
+to the JD. Minimum two bullets, no maximum.
+
+**🔴 Why They Are a Mismatch / Need Pressure Testing:**
+Bullet points only. Split into two sub-groups:
+
+- **Hard gaps** (Tier 1 requirements clearly missing or unverifiable)
+- **Pressure test areas** (present but thin, unverified, or flagged
+  by employer type mismatch)
+
+Never use the phrases "strong fit" or "perfect fit" — replace with
+specific evidence of requirement coverage instead.
+
+---
+
+### OUTPUT 2 — PHONE SCREEN SCRIPT
+
+**Recruiter Opening (speak first — 60 seconds, no questions yet):**
+Write a tight framing paragraph the recruiter reads verbatim. Must cover:
+1. What {{COMPANY_NAME}} does (from Section A)
+2. The delivery and commercial model
+3. What this specific role contributes to that model
+4. One specific detail from the candidate's profile that caught attention
+   — never generic, always traceable to their actual experience
+
+If the candidate attempts to speak or redirect before the framing is
+complete, the recruiter should acknowledge briefly and continue:
+"Absolutely — I want to make sure I give you the full picture first,
+then it's all yours."
+
+**Core Proving Questions:**
+Generate one question per Tier 1 requirement from Section B.
+Each question must:
+- Reference the specific skill or requirement by name
+- Ask for a concrete example
+- Be conversational in tone
+
+**Employer Context Questions:**
+For each [ADJACENT] or [DIVERGENT] employer identified in Section C,
+generate one question exploring transferability:
+"Your time at [Company] looks like it was more of a [model type]
+environment — how did that shape the way you approach [relevant skill]?"
+
+**Gap and Red Flag Questions:**
+Generate one question per item flagged under:
+- Hard gaps from OUTPUT 1
+- Pressure test areas from OUTPUT 1
+- Tenure gaps from Pre-Evaluation Check 1
+- Overqualification signal from Pre-Evaluation Check 2
+
+Each question must:
+- Name the concern directly — do not bury it
+- Give the candidate a fair path to address it
+- Be framed as "help me understand" — never hostile
+
+**Compensation and Logistics:**
+Close with these two questions verbatim:
+1. "What are your current compensation expectations, and is there
+   flexibility depending on the scope of the role?"
+2. "What does your availability look like, and are there any notice
+   period or competing offer constraints we should know about?"
+
+---
+
+### OUTPUT 3 — RED FLAG SUMMARY
+
+A concise scannable block for the hiring manager. No prose.
+
+**Verdict line (always first):**
+\`[VERDICT: X] [X]% match. [One sentence stating the single strongest
+reason to advance or the single biggest concern if not.]\`
+
+**Confirmed Gaps**
+Tier 1 requirements with zero evidence in the profile.
+\`[GAP] No evidence of Espresso or UIAutomator experience\`
+
+**Unverified Claims**
+Stated in profile but no supporting detail, outcome, or context given.
+\`[UNVERIFIED] "Led automation strategy" — no team size or outcome stated\`
+
+**Contextual Flags**
+Employer model gaps, pace mismatches, tenure patterns, scope inflation,
+overqualification signals, or incomplete profile fields.
+\`[CONTEXT] All prior roles at product companies — transferability
+to [{{COMPANY_NAME}}'s model] not yet confirmed\`
+\`[TENURE] 8-month gap between Role A and Role B — unexplored\`
+\`[SCOPE] Candidate may exceed role level — growth path discussion needed\`
+
+---
+
+## WRITING RESTRICTIONS (STRICTLY ENFORCED)
+
+**Tone:** Direct, professional, scannable. No filler. No flattery.
+
+**Banned words and phrases:**
+delve, embark, enlightening, realm, revolutionize, game-changer,
+unlock, discover, skyrocket, disruptive, utilizing, dive deep,
+tapestry, illuminate, unveil, pivotal, intricate, elucidate, hence,
+furthermore, however, harness, exciting, groundbreaking, cutting-edge,
+remarkable, navigating, landscape, in summary, in conclusion, moreover,
+boost, strong fit, perfect fit.
+
+**Formatting rules:**
+- Clean markdown only
+- Sections separated by \`---\`
+- Bold key phrases sparingly — never mid-sentence
+- No em-dashes, no semicolons
+- Numbers always exact — no rounding for effect
+- 🟢 always = strengths — 🔴 always = gaps and risks — never swap
+- All output in English regardless of input language
+
+**No contamination rule:**
+Do not carry scoring logic, example outputs, verdicts, or candidate
+details from one session into another. Each candidate profile is
+evaluated fresh against the locked Section A and Section B context only.
+Prior session outputs are not evidence and cannot be referenced.`;
 
 // ── Provider section visibility ───────────────────────────────────────────────
 function showProviderSection(provider) {
@@ -88,8 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'anthropicKey', 'apiKey', 'anthropicModel',
     'openaiBaseUrl', 'openaiKey', 'openaiModel',
     'geminiKey', 'geminiModel',
-    'systemPrompt', 'companyContext', 'autoAnalyze',
-    'ashbyKey', 'roleConfigs',
+    'autoAnalyze', 'ashbyKey', 'roleConfigs',
   ];
 
   chrome.storage.local.get(keys, (data) => {
@@ -107,10 +336,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('openai-model').value = data.openaiModel || 'deepseek-chat';
     document.getElementById('gemini-key').value   = data.geminiKey   || '';
     document.getElementById('gemini-model').value = data.geminiModel || 'gemini-1.5-flash';
-    document.getElementById('system-prompt').value =
-      data.systemPrompt !== undefined ? data.systemPrompt : DEFAULT_PROMPT;
-    document.getElementById('company-context').value =
-      data.companyContext !== undefined ? data.companyContext : DEFAULT_COMPANY_CONTEXT;
     document.getElementById('auto-analyze-toggle').checked = data.autoAnalyze !== false;
     document.getElementById('ashby-key').value = data.ashbyKey || '';
 
@@ -211,19 +436,11 @@ document.getElementById('save-btn').addEventListener('click', () => {
     openaiModel:    document.getElementById('openai-model').value.trim(),
     geminiKey:      document.getElementById('gemini-key').value.trim(),
     geminiModel:    document.getElementById('gemini-model').value.trim() || 'gemini-1.5-flash',
-    systemPrompt:   document.getElementById('system-prompt').value.trim(),
-    companyContext: document.getElementById('company-context').value.trim(),
     autoAnalyze:    document.getElementById('auto-analyze-toggle').checked,
     ashbyKey:       document.getElementById('ashby-key').value.trim(),
   }, () => {
     flash('Saved ✓', '');
   });
-});
-
-// ── Reset prompt ──────────────────────────────────────────────────────────────
-document.getElementById('reset-btn').addEventListener('click', () => {
-  document.getElementById('system-prompt').value = DEFAULT_PROMPT;
-  flash('Reset to default (not saved yet)', 'warn');
 });
 
 function flash(msg, cls) {
@@ -233,114 +450,13 @@ function flash(msg, cls) {
   setTimeout(() => { fb.textContent = ''; fb.className = ''; }, 2800);
 }
 
-function flashGenerate(msg, cls) {
-  const fb = document.getElementById('generate-feedback');
-  fb.textContent = msg;
-  fb.className   = cls;
-  setTimeout(() => { fb.textContent = ''; fb.className = ''; }, 4000);
+// ── Fill prompt template with role details (instant — no AI call) ─────────────
+function fillPromptTemplate(companyName, companyInfo, jd) {
+  return PROMPT_TEMPLATE
+    .replace(/\{\{COMPANY_NAME\}\}/g, companyName || 'the company')
+    .replace(/\{\{COMPANY_INFO\}\}/g, companyInfo || '(no company info provided)')
+    .replace(/\{\{JOB_DESCRIPTION\}\}/g, jd || '(no job description provided)');
 }
-
-// ── Generate System Prompt from JD ───────────────────────────────────────────
-function buildGenerationPrompt(companyContext, jd, currentPrompt) {
-  const referencePrompt = (currentPrompt && currentPrompt.length > 100) ? currentPrompt : DEFAULT_PROMPT;
-  return {
-    system: `You are an expert at writing structured recruitment evaluation system prompts.
-Generate a new system prompt adapted to the provided company context and job description. Follow ALL rules below exactly:
-
-STRUCTURE — Keep these sections in this exact order:
-1. Role & Objective
-2. The [Company] Business Model (the baseline for evaluating fit)
-3. Task 1: Resume & Profile Match Assessment
-4. Task 2: Phone Screen Script Generation
-5. Writing Restrictions
-
-TASK 1 REQUIREMENTS:
-- Keep the ADVANCE/ARCHIVE decision rule and the 80% threshold
-- Keep the three subsections: Overall Match Percentage, Why They Look Good on Paper (🟢), Why They Are a Mismatch (🔴)
-- Include a "Company Type Verification" subsection that instructs the evaluator to classify every company in the candidate's history as either (a) the relevant type for this role or (b) a mismatch type — with concrete examples from the target industry drawn from the JD. The evaluator must never infer a company sells custom/complex services just because its name includes a relevant buzzword (AI, data, cloud, etc.).
-
-TASK 2 REQUIREMENTS:
-- Keep the 3-part structure: Intro & Positioning, Core Proving Questions, Compensation Alignment
-- The Intro section must explicitly instruct the recruiter NOT to open with a question — they must first deliver a 60-second anchor explaining what the company is and is NOT, and the exact commercial model, before the candidate speaks
-- The Core Proving Questions must be derived DIRECTLY from the red flags identified in Task 1's mismatch section — not from a fixed set of generic axes. For each red flag, write at least one question that validates or refutes that specific concern for THIS candidate. Rules: no soft openers, each question must force a concrete verifiable answer, always include one final IC reality check question (zero support structure, initial $1M net-new quota, flat IC seat)
-
-WRITING RESTRICTIONS — Keep intact:
-- Same tone (scannable, direct, professional)
-- Same banned words list
-- Same formatting rules (no em-dashes, no semicolons, clean markdown)
-- Same sparse-data rule (treat missing descriptions as a data gap, not a red flag)
-
-REPLACE:
-- Company name, description, and business model details
-- Role requirements and compensation figures
-- Fit signals and mismatch signals
-- Company Type Verification examples (adapt them to the industry of the new role)
-
-CRITICAL — Output format the generated prompt must enforce:
-  Part 1: a single-line JSON — {"match_pct": <integer 0-100>, "verdict": "ADVANCE" or "ARCHIVE", "summary": "<2-3 sentence explanation>"}
-  Then on its own line: ---FULL---
-  Then Part 2: full Task 1 assessment (and Task 2 Phone Screen Script if verdict is ADVANCE and match_pct >= 80)
-
-Output ONLY the new system prompt. No preamble, no explanation, no markdown fences.`,
-    user: `REFERENCE PROMPT (structure and style to follow):
-<reference>
-${referencePrompt}
-</reference>
-
-COMPANY CONTEXT:
-<company>
-${companyContext}
-</company>
-
-JOB DESCRIPTION:
-<jd>
-${jd}
-</jd>`,
-  };
-}
-
-document.getElementById('generate-btn').addEventListener('click', async () => {
-  const companyContext = document.getElementById('company-context').value.trim();
-  const jd             = document.getElementById('jd-input').value.trim();
-
-  if (!jd) { flashGenerate('Paste a job description first.', 'warn'); return; }
-
-  const provider = document.getElementById('provider-select').value;
-  const settings = {
-    provider,
-    anthropicKey:   document.getElementById('anthropic-key').value.trim(),
-    anthropicModel: document.getElementById('anthropic-model').value,
-    openaiBaseUrl:  document.getElementById('openai-base-url').value.trim(),
-    openaiKey:      document.getElementById('openai-key').value.trim(),
-    openaiModel:    document.getElementById('openai-model').value.trim(),
-    geminiKey:      document.getElementById('gemini-key').value.trim(),
-    geminiModel:    document.getElementById('gemini-model').value.trim() || 'gemini-1.5-flash',
-  };
-
-  const activeKey =
-    provider === 'gemini'       ? settings.geminiKey  :
-    provider === 'openai-compat' ? settings.openaiKey  :
-    settings.anthropicKey;
-
-  if (!activeKey) { flashGenerate('Enter your API key first.', 'warn'); return; }
-
-  const btn = document.getElementById('generate-btn');
-  btn.disabled    = true;
-  btn.textContent = 'Generating…';
-
-  try {
-    const currentPrompt = document.getElementById('system-prompt').value.trim();
-    const { system, user } = buildGenerationPrompt(companyContext, jd, currentPrompt);
-    const result = await callAI(settings, system, user);
-    document.getElementById('system-prompt').value = result.trim();
-    flashGenerate('Generated ✓ — review and Save.', '');
-  } catch (err) {
-    flashGenerate('Error: ' + err.message, 'warn');
-  } finally {
-    btn.disabled    = false;
-    btn.textContent = '✨ Generate System Prompt';
-  }
-});
 
 // ── AI provider router (mirrors popup.js) ─────────────────────────────────────
 async function callAI(settings, systemPrompt, userMessage) {
@@ -477,11 +593,9 @@ let editingRoleId = null;
 function renderRoleList(configs) {
   const list = document.getElementById('role-list');
   if (!configs.length) {
-    list.innerHTML = '<p class="role-empty">No roles configured. Use the legacy system prompt below, or add a role.</p>';
-    document.getElementById('legacy-prompt-section').style.display = '';
+    list.innerHTML = '<p class="role-empty">No roles configured yet. Click <strong>+ Add Role</strong> to create one.</p>';
     return;
   }
-  document.getElementById('legacy-prompt-section').style.display = 'none';
 
   list.innerHTML = configs.map(r => `
     <div class="role-item" data-id="${r.id}">
@@ -511,9 +625,10 @@ function openRoleEditor(roleId, configs) {
   document.getElementById('role-editor-title').textContent = `Editing: ${role.name}`;
   document.getElementById('editing-role-id').value         = roleId;
   document.getElementById('role-name-input').value         = role.name;
+  document.getElementById('role-company-name').value       = role.companyName    || '';
   document.getElementById('role-company-context').value    = role.companyContext || '';
+  document.getElementById('role-jd-input').value           = role.jd             || '';
   document.getElementById('role-system-prompt').value      = role.systemPrompt   || '';
-  document.getElementById('role-jd-input').value           = '';
   document.getElementById('role-editor').classList.add('visible');
   document.getElementById('role-name-input').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -523,54 +638,29 @@ document.getElementById('add-role-btn').addEventListener('click', () => {
   document.getElementById('role-editor-title').textContent = 'New Role';
   document.getElementById('editing-role-id').value         = '';
   document.getElementById('role-name-input').value         = '';
+  document.getElementById('role-company-name').value       = '';
   document.getElementById('role-company-context').value    = '';
-  document.getElementById('role-system-prompt').value      = '';
   document.getElementById('role-jd-input').value           = '';
+  document.getElementById('role-system-prompt').value      = '';
   document.getElementById('role-editor').classList.add('visible');
   document.getElementById('role-name-input').focus();
 });
 
-document.getElementById('upgrade-prompt-btn').addEventListener('click', async () => {
-  const context = document.getElementById('role-company-context').value.trim();
-  const fb      = document.getElementById('role-editor-feedback');
-  if (!context) { fb.textContent = 'Add company context first.'; setTimeout(() => { fb.textContent = ''; }, 3000); return; }
+document.getElementById('upgrade-prompt-btn').addEventListener('click', () => {
+  const companyName = document.getElementById('role-company-name').value.trim();
+  const context     = document.getElementById('role-company-context').value.trim();
+  const jd          = document.getElementById('role-jd-input').value.trim();
+  const fb          = document.getElementById('role-editor-feedback');
 
-  const provider = document.getElementById('provider-select').value;
-  const settings = {
-    provider,
-    anthropicKey:   document.getElementById('anthropic-key').value.trim(),
-    anthropicModel: document.getElementById('anthropic-model').value,
-    openaiBaseUrl:  document.getElementById('openai-base-url').value.trim(),
-    openaiKey:      document.getElementById('openai-key').value.trim(),
-    openaiModel:    document.getElementById('openai-model').value.trim(),
-    geminiKey:      document.getElementById('gemini-key').value.trim(),
-    geminiModel:    document.getElementById('gemini-model').value.trim() || 'gemini-1.5-flash',
-  };
-  const activeKey =
-    provider === 'gemini'        ? settings.geminiKey :
-    provider === 'openai-compat' ? settings.openaiKey :
-    settings.anthropicKey;
-  if (!activeKey) { fb.textContent = 'Enter API key first.'; setTimeout(() => { fb.textContent = ''; }, 3000); return; }
-
-  const btn = document.getElementById('upgrade-prompt-btn');
-  btn.disabled    = true;
-  btn.textContent = 'Upgrading…';
-  try {
-    const existingPrompt = document.getElementById('role-system-prompt').value.trim();
-    const jd = document.getElementById('role-jd-input')?.value.trim() || '';
-    const jdOrFallback = jd || '(infer the role requirements from the company context above)';
-    const { system, user } = buildGenerationPrompt(context, jdOrFallback, existingPrompt);
-    const result = await callAI(settings, system, user);
-    document.getElementById('role-system-prompt').value = result.trim();
-    fb.textContent = 'Generated ✓ — review and Save Role.';
-    setTimeout(() => { fb.textContent = ''; }, 4000);
-  } catch (err) {
-    fb.textContent = 'Error: ' + err.message;
-    setTimeout(() => { fb.textContent = ''; }, 4000);
-  } finally {
-    btn.disabled    = false;
-    btn.textContent = '↑ Upgrade Prompt';
+  if (!context) {
+    fb.textContent = 'Add company context first.';
+    setTimeout(() => { fb.textContent = ''; }, 3000);
+    return;
   }
+
+  document.getElementById('role-system-prompt').value = fillPromptTemplate(companyName, context, jd);
+  fb.textContent = 'Filled ✓ — review and Save Role.';
+  setTimeout(() => { fb.textContent = ''; }, 3000);
 });
 
 document.getElementById('cancel-role-btn').addEventListener('click', () => {
@@ -579,12 +669,15 @@ document.getElementById('cancel-role-btn').addEventListener('click', () => {
 });
 
 document.getElementById('save-role-btn').addEventListener('click', async () => {
-  const name    = document.getElementById('role-name-input').value.trim();
-  const context = document.getElementById('role-company-context').value.trim();
-  const prompt  = document.getElementById('role-system-prompt').value.trim();
-  const fb      = document.getElementById('role-editor-feedback');
+  const name        = document.getElementById('role-name-input').value.trim();
+  const companyName = document.getElementById('role-company-name').value.trim();
+  const context     = document.getElementById('role-company-context').value.trim();
+  const jd          = document.getElementById('role-jd-input').value.trim();
+  const prompt      = document.getElementById('role-system-prompt').value.trim();
+  const fb          = document.getElementById('role-editor-feedback');
 
-  if (!name) { fb.textContent = 'Name is required.'; return; }
+  if (!name)   { fb.textContent = 'Name is required.'; return; }
+  if (!prompt) { fb.textContent = 'Generate a system prompt first (click ⚡ Fill Template).'; return; }
 
   const { roleConfigs = [] } = await chrome.storage.local.get('roleConfigs');
 
@@ -592,7 +685,7 @@ document.getElementById('save-role-btn').addEventListener('click', async () => {
     const idx = roleConfigs.findIndex(r => r.id === editingRoleId);
     if (idx >= 0) {
       const wasActive = roleConfigs[idx].isActive;
-      roleConfigs[idx] = { ...roleConfigs[idx], name, companyContext: context, systemPrompt: prompt };
+      roleConfigs[idx] = { ...roleConfigs[idx], name, companyName, companyContext: context, jd, systemPrompt: prompt };
       if (wasActive) await clearUrlCache();
     }
   } else {
@@ -600,10 +693,19 @@ document.getElementById('save-role-btn').addEventListener('click', async () => {
     roleConfigs.push({
       id:             `role_${Date.now()}`,
       name,
+      companyName,
       companyContext: context,
+      jd,
       systemPrompt:   prompt,
       isActive:       isFirst,
     });
+    // Auto-create a project with the same name
+    const { projects = [] } = await chrome.storage.local.get('projects');
+    if (!projects.some(p => p.name === name)) {
+      const newProject = { id: `proj_${Date.now()}`, name, createdAt: new Date().toISOString(), candidates: [] };
+      projects.unshift(newProject);
+      await chrome.storage.local.set({ projects, lastActiveProjectId: newProject.id });
+    }
   }
 
   await chrome.storage.local.set({ roleConfigs });
