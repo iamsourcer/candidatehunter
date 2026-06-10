@@ -210,9 +210,18 @@ export function parseAnalysisResponse(text) {
   let matchPct = 50, verdict = 'ARCHIVE', summary = 'Analysis complete.', highlights = null;
 
   try {
-    const jsonLine = part1.split('\n').find(l => l.trim().startsWith('{'));
-    if (jsonLine) {
-      const parsed = JSON.parse(jsonLine.trim());
+    const start = part1.indexOf('{');
+    let jsonStr = null;
+    if (start >= 0) {
+      let depth = 0, end = -1;
+      for (let i = start; i < part1.length; i++) {
+        if (part1[i] === '{') depth++;
+        else if (part1[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+      }
+      if (end > start) jsonStr = part1.slice(start, end + 1);
+    }
+    if (jsonStr) {
+      const parsed = JSON.parse(jsonStr);
       if (typeof parsed.match_pct === 'number')
         matchPct = Math.min(100, Math.max(0, Math.round(parsed.match_pct)));
       if (parsed.verdict === 'ADVANCE' || parsed.verdict === 'ARCHIVE')
