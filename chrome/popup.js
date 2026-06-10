@@ -186,57 +186,21 @@ async function analyzeCandidate() {
 
     btn.textContent = 'Analyzing with AI…';
     btn.style.setProperty('--pct', '60%');
-    const activeSystemPrompt = await getActiveSystemPrompt();
-    const responseText       = await callAI(settings, activeSystemPrompt, userMessage, { includeHighlights: true });
 
-    let { matchPct, verdict, summary, fullAnalysis, highlights, suggestTerms } = parseAnalysisResponse(responseText);
-
-    // ── Cross-platform synthesis (Ashby + LinkedIn) ───────────────────────────
-    if (isAshby && ashbyLinkedInUrl) {
-      try {
-        btn.textContent = 'Loading LinkedIn profile…';
-        btn.style.setProperty('--pct', '72%');
-        const liData = await extractLinkedInFromUrl(ashbyLinkedInUrl);
-        if (liData) {
-          btn.textContent = 'Cross-referencing sources…';
-          btn.style.setProperty('--pct', '85%');
-          const liResponse = await callAI(settings, activeSystemPrompt, buildUserMessage(liData), { includeHighlights: true });
-          const liResult   = parseAnalysisResponse(liResponse);
-
-          if (liResult.verdict !== verdict || matchPct < 70) {
-            const synthResponse = await callAI(settings, activeSystemPrompt,
-              buildSynthesisMessage({ matchPct, verdict, summary }, liResult));
-            const synthResult = parseAnalysisResponse(synthResponse);
-            matchPct     = synthResult.matchPct;
-            verdict      = synthResult.verdict;
-            summary      = synthResult.summary;
-            fullAnalysis = synthResult.fullAnalysis;
-            highlights   = synthResult.highlights || liResult.highlights || null;
-            suggestTerms = synthResult.suggestTerms || liResult.suggestTerms || null;
-          } else {
-            ({ matchPct, verdict, summary, fullAnalysis, highlights, suggestTerms } = liResult);
-          }
-          if (liData.profile?.name) candidateName = liData.profile.name;
-        }
-      } catch (_) { /* si falla la síntesis, usa el resultado Ashby */ }
-    }
-
-    await chrome.storage.local.set({
-      [`analysis_${tab.id}`]:   { matchPct, verdict, summary, candidateName, highlights, suggestTerms },
-      [`urlcache_${cleanUrl}`]: { matchPct, verdict, summary, candidateName, fullAnalysis, highlights, suggestTerms, timestamp: Date.now() },
-      lastAnalysis:             fullAnalysis,
-      lastCandidateName:        candidateName,
-      lastVerdict:              verdict,
-      lastMatch:                matchPct,
-      lastSuggestTerms:         suggestTerms || [],
-      lastHighlights:           highlights   || null,
-      lastProfile:              lastProfileData,
-      ...extraStorage,
+    // Delegate AI calls to background — analysis survives if popup closes
+    chrome.runtime.sendMessage({
+      type:            'ANALYZE_NOW',
+      tabId:           tab.id,
+      cleanUrl,
+      userMessage,
+      candidateName,
+      profileData:     lastProfileData,
+      ashbyLinkedInUrl,
+      isAshby,
+    }, (response) => {
+      if (response?.error) { showError(response.error); setMainAction('run'); }
     });
-
-    showAnalysisResult(matchPct, verdict, summary);
-    if (isLI) await handleHighlights(tab.id, highlights);
-    if (isAshby) await showLinkedInLink(tab.id);
+    showAnalyzingSpinner(tab.id);
 
   } catch (err) {
     console.error(err);
@@ -471,6 +435,7 @@ function extractFromTab(url, extractFn) {
 }
 
 const ASHBY_CANDIDATE_RE = /app\.ashbyhq\.com\/.*\/candidates\/[^/?#]+/;
+const LIVE_URL_RE = /^https:\/\/(meet\.google\.com|voice\.google\.com)\//;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 (async () => {
@@ -495,6 +460,12 @@ const ASHBY_CANDIDATE_RE = /app\.ashbyhq\.com\/.*\/candidates\/[^/?#]+/;
   const cleanUrl = url.split('?')[0];
   const isLI     = url.includes('linkedin.com/in/');
   const isAshby  = ASHBY_CANDIDATE_RE.test(cleanUrl);
+  const isLive   = LIVE_URL_RE.test(url);
+
+  if (isLive) {
+    initLivePanel(tab);
+    return;
+  }
 
   if (!isLI && !isAshby) return;
 
@@ -616,6 +587,111 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+// ── Live Interview Co-Pilot ───────────────────────────────────────────────────
+
+async function initLivePanel(tab) {
+  document.getElementById('live-panel').style.display = 'block';
+  document.getElementById('analyze-btn').style.display = 'none';
+
+  // Populate candidate dropdown from projects
+  const { projects = [] } = await chrome.storage.local.get('projects');
+  const sel = document.getElementById('live-candidate-select');
+  const candidates = [];
+  for (const proj of projects) {
+    for (const c of (proj.candidates || [])) {
+      if (!candidates.find(x => x.url === c.url)) candidates.push(c);
+    }
+  }
+  candidates.sort((a, b) => (b.addedAt || '').localeCompare(a.addedAt || ''));
+
+  if (candidates.length) {
+    sel.innerHTML = '<option value="">— select candidate —</option>' +
+      candidates.slice(0, 20).map((c, i) =>
+        `<option value="${i}">${esc(c.name || 'Candidate')} — ${c.verdict || ''} ${c.matchPct ? c.matchPct + '%' : ''}</option>`
+      ).join('');
+    sel._candidates = candidates;
+  }
+
+  // Check if session already active
+  const { activeLiveCandidate } = await chrome.storage.local.get('activeLiveCandidate');
+  if (activeLiveCandidate) showLiveActive(true);
+
+  document.getElementById('live-start-btn').addEventListener('click', async () => {
+    const idx = sel.value;
+    if (!sel._candidates || idx === '') {
+      clearStatus();
+      showError('Select a candidate first.');
+      return;
+    }
+    const cand = sel._candidates[parseInt(idx, 10)];
+    if (!cand) return;
+
+    const { deepgramKey } = await chrome.storage.local.get('deepgramKey');
+
+    // Build pending topics from candidate data
+    const urlKey = `urlcache_${cand.url}`;
+    const cached = (await chrome.storage.local.get(urlKey))[urlKey];
+    const pendingTopics = buildTopicsFromCandidate(cand, cached);
+
+    // Get stream ID for tab audio (if Deepgram configured)
+    let streamId = null;
+    if (deepgramKey) {
+      try {
+        streamId = await new Promise((resolve, reject) => {
+          chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id }, (id) => {
+            if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+            else resolve(id);
+          });
+        });
+      } catch (e) {
+        console.warn('[CH] tabCapture failed:', e.message);
+      }
+    }
+
+    const candidateCtx = {
+      name:        cand.name,
+      verdict:     cand.verdict,
+      matchPct:    cand.matchPct,
+      highlights:  cached?.highlights || null,
+      pendingTopics,
+      hasTabAudio: !!(streamId && deepgramKey),
+    };
+
+    await chrome.storage.local.set({ activeLiveCandidate: candidateCtx });
+    await chrome.runtime.sendMessage({
+      type: 'START_LIVE_SESSION',
+      tabId: tab.id,
+      streamId,
+      deepgramKey: deepgramKey || null,
+    });
+
+    showLiveActive(true);
+  });
+
+  document.getElementById('live-stop-btn').addEventListener('click', async () => {
+    await chrome.storage.local.remove('activeLiveCandidate');
+    await chrome.runtime.sendMessage({ type: 'STOP_LIVE_SESSION' });
+    showLiveActive(false);
+  });
+}
+
+function buildTopicsFromCandidate(cand, cached) {
+  const topics = ['Opening / company pitch'];
+  const neg = cached?.highlights?.negative || [];
+  for (const n of neg.slice(0, 3)) topics.push('Probe: ' + n);
+  topics.push('Net-new quota history');
+  topics.push('Comp expectations');
+  return topics;
+}
+
+function showLiveActive(active) {
+  document.getElementById('live-start-btn').style.display = active ? 'none' : '';
+  document.getElementById('live-stop-btn').style.display = active ? '' : 'none';
+  document.getElementById('live-active-info').style.display = active ? 'block' : 'none';
+  const badge = document.getElementById('live-badge');
+  if (badge) badge.style.display = active ? '' : 'none';
+}
+
 function showAnalyzingSpinner(tabId) {
   const area = document.getElementById('status-area');
   area.textContent = '⏳ Analyzing in background...';
@@ -629,6 +705,7 @@ function showAnalyzingSpinner(tabId) {
       const c = changes[`analysis_${tabId}`].newValue;
       showAnalysisResult(c.matchPct, c.verdict, c.summary);
       if (isLI) handleHighlights(tabId, c.highlights || null);
+      if (isAshby) showLinkedInLink(tabId);
     }
   });
 }
