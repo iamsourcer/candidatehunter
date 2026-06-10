@@ -257,7 +257,6 @@
         <button class="or-model-btn" data-model="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B ⭐</button>
         <button class="or-model-btn" data-model="deepseek/deepseek-r1:free">DeepSeek R1</button>
         <button class="or-model-btn" data-model="google/gemma-3-27b-it:free">Gemma 3 27B</button>
-        <button class="or-model-btn" data-model="qwen/qwen3-235b-a22b:free">Qwen 3 235B</button>
       </div>
     </div>
     <label for="openai-base-url">Base URL</label>
@@ -321,21 +320,26 @@
       <input type="text" id="role-name-input" placeholder="e.g. Senior AE — Solvd" style="font-family:inherit">
       <label for="role-company-context">Company Context</label>
       <textarea id="role-company-context" rows="4" style="height:100px" placeholder="Describe what the company does, sales model, target buyers…"></textarea>
+      <p class="hint" style="margin:10px 0 6px;color:#3949ab;font-size:12px;background:#f0f3ff;padding:8px 10px;border-radius:4px;border-left:3px solid #5c6bc0">
+        <strong>Flujo:</strong> 1. Llenar Company Context → 2. Pegar JD abajo → 3. Click <strong>✨ Generate Prompt</strong> → revisar → Save Role
+      </p>
+      <label for="role-jd-input">Job Description <span style="font-weight:400;color:#aaa;font-size:11px">— opcional, mejora la precisión del prompt generado</span></label>
+      <textarea id="role-jd-input" rows="5" style="height:90px;background:#fff" placeholder="Pegar la job description completa aquí…"></textarea>
       <label for="role-system-prompt">System Prompt</label>
-      <textarea id="role-system-prompt" placeholder="Paste or generate the evaluation prompt…"></textarea>
+      <textarea id="role-system-prompt" placeholder="Se genera con el botón de abajo, o pegá uno manualmente…"></textarea>
       <div class="editor-btn-row">
         <button id="save-role-btn">Save Role</button>
         <button id="cancel-role-btn">Cancel</button>
-        <button id="upgrade-prompt-btn" style="background:none;border:1px solid #5c6bc0;color:#5c6bc0;padding:9px 18px;border-radius:4px;font-size:13px;cursor:pointer;transition:border-color .15s,color .15s" title="Regenerate system prompt with latest instructions">↑ Upgrade Prompt</button>
+        <button id="upgrade-prompt-btn" style="background:#5c6bc0;color:white;border:none;padding:9px 18px;border-radius:4px;font-size:13px;cursor:pointer;transition:background .15s" title="Generar system prompt desde el company context y la JD">✨ Generate Prompt</button>
         <span id="role-editor-feedback"></span>
       </div>
     </div>
   </div>
 
-  <!-- ── Generate from JD ── -->
+  <!-- ── Generate from JD (legacy) ── -->
   <div class="generate-section">
-    <h3>✨ Generate Prompt from Job Description</h3>
-    <p class="section-hint">Paste a JD to build a tailored evaluation prompt. Copy the result into a Role Configuration above.</p>
+    <h3>✨ Generate Prompt from Job Description <span style="font-weight:400;font-size:12px;color:#aaa">(legacy — use the role editor above instead)</span></h3>
+    <p class="section-hint">Para usuarios sin roles configurados. Si ya tenés roles, usá el botón "✨ Generate Prompt" dentro del editor de rol.</p>
 
     <label for="company-context">Company Context <span class="hint-inline">— reference for generation</span></label>
     <textarea id="company-context" rows="5" placeholder="Describe what your company does, your sales model, target buyers, compensation structure..."></textarea>

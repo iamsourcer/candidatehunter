@@ -513,6 +513,7 @@ function openRoleEditor(roleId, configs) {
   document.getElementById('role-name-input').value         = role.name;
   document.getElementById('role-company-context').value    = role.companyContext || '';
   document.getElementById('role-system-prompt').value      = role.systemPrompt   || '';
+  document.getElementById('role-jd-input').value           = '';
   document.getElementById('role-editor').classList.add('visible');
   document.getElementById('role-name-input').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -524,6 +525,7 @@ document.getElementById('add-role-btn').addEventListener('click', () => {
   document.getElementById('role-name-input').value         = '';
   document.getElementById('role-company-context').value    = '';
   document.getElementById('role-system-prompt').value      = '';
+  document.getElementById('role-jd-input').value           = '';
   document.getElementById('role-editor').classList.add('visible');
   document.getElementById('role-name-input').focus();
 });
@@ -555,7 +557,9 @@ document.getElementById('upgrade-prompt-btn').addEventListener('click', async ()
   btn.textContent = 'Upgrading…';
   try {
     const existingPrompt = document.getElementById('role-system-prompt').value.trim();
-    const { system, user } = buildGenerationPrompt(context, '(infer a senior IC enterprise sales hunter role from the company context above)', existingPrompt);
+    const jd = document.getElementById('role-jd-input')?.value.trim() || '';
+    const jdOrFallback = jd || '(infer the role requirements from the company context above)';
+    const { system, user } = buildGenerationPrompt(context, jdOrFallback, existingPrompt);
     const result = await callAI(settings, system, user);
     document.getElementById('role-system-prompt').value = result.trim();
     fb.textContent = 'Generated ✓ — review and Save Role.';
