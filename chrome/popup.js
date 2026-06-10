@@ -302,11 +302,23 @@ function updateHighlightToggleBtn() {
 async function handleHighlights(tabId, hl) {
   lastHighlights = hl;
   const hlRow = document.getElementById('hl-row');
-  if (!hl || (!hl.positive?.length && !hl.negative?.length)) {
-    if (hlRow) hlRow.style.display = 'none';
+  const btn   = document.getElementById('highlight-toggle');
+  if (!hlRow || !btn) return;
+  hlRow.style.display = '';
+  const hasHL = hl && (hl.positive?.length || hl.negative?.length);
+  if (!hasHL) {
+    btn.disabled       = true;
+    btn.style.opacity  = '0.45';
+    btn.style.cursor   = 'default';
+    btn.textContent    = '🔍 Re-analyze to enable highlights';
+    btn.style.borderColor = '#ddd';
+    btn.style.color       = '#999';
+    btn.style.background  = 'none';
     return;
   }
-  if (hlRow) hlRow.style.display = '';
+  btn.disabled      = false;
+  btn.style.opacity = '';
+  btn.style.cursor  = 'pointer';
   updateHighlightToggleBtn();
   if (highlightEnabled) await applyHighlightsToTab(tabId, hl);
 }
@@ -635,8 +647,8 @@ function renderRoleDropdown(configs) {
   const dropdown = document.getElementById('role-dropdown');
   dropdown.innerHTML = configs.map(r => `
     <div class="rd-item${r.isActive ? ' active' : ''}" data-id="${r.id}">
-      <span style="width:12px;display:inline-block">${r.isActive ? '✓' : ''}</span>
-      ${r.name}
+      <span style="width:12px;flex-shrink:0">${r.isActive ? '✓' : ''}</span>
+      <span class="rd-label">${r.name}</span>
     </div>
   `).join('') + `
     <div class="rd-separator"></div>

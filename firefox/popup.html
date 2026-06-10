@@ -35,13 +35,18 @@
     #settings-btn:hover { color: #0073b1; }
 
     /* ── Role switcher dropdown ── */
-    #role-switcher { font-size: 11px; color: #0073b1; margin-top: 1px; }
-    #active-role-trigger { cursor: pointer; display: flex; align-items: center; gap: 3px; }
+    #role-switcher { font-size: 11px; color: #0073b1; margin-top: 1px; max-width: 160px; }
+    #active-role-trigger { cursor: pointer; display: flex; align-items: center; gap: 3px; overflow: hidden; }
+    #active-role-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; display: inline-block; }
     #active-role-trigger:hover #active-role-name { text-decoration: underline; }
+    #role-dropdown { max-width: 250px; }
     #role-dropdown .rd-item {
       padding: 7px 14px; font-size: 12px; cursor: pointer; display: flex;
       align-items: center; gap: 6px; color: #1a1a1a; transition: background 0.1s;
-      white-space: nowrap;
+      overflow: hidden;
+    }
+    #role-dropdown .rd-item span.rd-label {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     #role-dropdown .rd-item:hover { background: #f5f6f7; }
     #role-dropdown .rd-item.active { color: #0073b1; font-weight: 600; }
