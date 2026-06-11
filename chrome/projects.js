@@ -88,8 +88,9 @@ function renderMain(project, projects) {
       const realIdx    = allCandidates.indexOf(c);
       const cls        = { 'ADVANCE': 'advance', 'HOLD': 'hold', 'LONG SHOT': 'long-shot', 'DO NOT ADVANCE': 'archive', 'ARCHIVE': 'archive' }[c.verdict] || 'archive';
       const hasAnalysis = !!c.fullAnalysis;
+      const screened   = c.postCall || c.phoneScreenTranscripts?.length;
       return `<tr>
-        <td><a class="name-link" href="${esc(c.url)}" target="_blank">${esc(c.name)}</a></td>
+        <td><a class="name-link" href="${esc(c.url)}" target="_blank">${esc(c.name)}</a>${screened ? ' <span title="Phone screen done — verdict reflects the call">📞</span>' : ''}</td>
         <td><span class="match-cell ${cls}">${c.matchPct}%</span></td>
         <td><span class="badge ${cls}">${c.verdict}</span></td>
         <td class="date-cell">${formatDate(c.addedAt)}</td>

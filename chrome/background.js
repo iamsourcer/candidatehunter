@@ -1,4 +1,4 @@
-import { buildUserMessage, buildAshbyUserMessage, buildSynthesisMessage, callAI, callAnthropic, callOpenAICompat, callGemini, parseAnalysisResponse, extractExperienceFunc, extractLinkedInFromUrl, getActiveSystemPrompt, buildLiveSuggestionMessage } from './shared.js';
+import { buildUserMessage, buildAshbyUserMessage, buildSynthesisMessage, callAI, callAnthropic, callOpenAICompat, callGemini, parseAnalysisResponse, extractExperienceFunc, extractLinkedInFromUrl, getActiveSystemPrompt, buildLiveSuggestionMessage, buildPostCallDebriefMessage, buildWriteupMessage, WRITEUP_SYSTEM_PROMPT } from './shared.js';
 
 const inProgress = new Map();
 
@@ -29,22 +29,139 @@ async function startLiveSession(tabId, streamId, deepgramKey) {
   liveSessionTabId = tabId;
   liveTranscriptBuffer = { recruiter: '', candidate: '' };
   liveSuggestionPending = false;
+  // Persist session state so the transcript survives service worker restarts
+  const { activeLiveCandidate } = await chrome.storage.local.get('activeLiveCandidate');
+  await chrome.storage.session.set({
+    liveLog: [],
+    liveCtx: activeLiveCandidate || null,
+    liveTabId: tabId,
+    liveTopics: { pending: activeLiveCandidate?.pendingTopics || [], covered: [] },
+  });
   if (streamId && deepgramKey) {
     await ensureOffscreen();
     chrome.runtime.sendMessage({ type: 'START_TAB_CAPTURE', streamId, deepgramKey }).catch(() => {});
   }
 }
 
-function stopLiveSession() {
+async function stopLiveSession() {
+  const tabId = liveSessionTabId;
   liveSessionTabId = null;
   offscreenCreated = false;
   liveTranscriptBuffer = { recruiter: '', candidate: '' };
   liveSuggestionPending = false;
   chrome.runtime.sendMessage({ type: 'STOP_TAB_CAPTURE' }).catch(() => {});
+
+  const { liveLog = [], liveCtx, liveTabId, liveTopics } = await chrome.storage.session.get([
+    'liveLog', 'liveCtx', 'liveTabId', 'liveTopics',
+  ]);
+  await chrome.storage.session.remove(['liveLog', 'liveCtx', 'liveTabId', 'liveTopics']);
+  generatePostCallSummary(liveLog, liveCtx, tabId || liveTabId, liveTopics).catch(e =>
+    console.error('[bg] post-call summary error:', e));
 }
 
-function appendLiveTranscript(speaker, text) {
+async function appendLiveTranscript(speaker, text) {
   liveTranscriptBuffer[speaker] = (liveTranscriptBuffer[speaker] + ' ' + text).trim();
+  const { liveLog = [] } = await chrome.storage.session.get('liveLog');
+  liveLog.push({ s: speaker, text, t: Date.now() });
+  await chrome.storage.session.set({ liveLog });
+}
+
+// ── Post-call pipeline: debrief + final verdict + write-up ───────────────────
+const MIN_SUMMARY_WORDS = 80;
+
+async function generatePostCallSummary(liveLog, candidateCtx, tabId, liveTopics) {
+  if (!candidateCtx || !liveLog.length) return;
+  const transcript = liveLog
+    .map(e => (e.s === 'candidate' ? 'CANDIDATE: ' : 'RECRUITER: ') + e.text)
+    .join('\n');
+  const wordCount = transcript.split(/\s+/).length;
+  const notify = (status) => {
+    if (tabId) chrome.tabs.sendMessage(tabId, { type: 'LIVE_STATUS', status }).catch(() => {});
+  };
+  if (wordCount < MIN_SUMMARY_WORDS) { notify('summary_skipped'); return; }
+
+  notify('summary_generating');
+  try {
+    const settings = await loadSettings();
+    if (!getActiveKey(settings)) { notify('summary_skipped'); return; }
+
+    const url = candidateCtx.url;
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+    // Raw transcript is saved first — even if the AI calls below fail
+    await updateCandidateRecords(url, (rec) => {
+      rec.phoneScreenTranscripts = rec.phoneScreenTranscripts || [];
+      rec.phoneScreenTranscripts.push({ date: new Date().toISOString(), text: transcript });
+    });
+
+    const originalAnalysis = await getStoredFullAnalysis(url);
+
+    // Call 1 — debrief + updated verdict (reuses the standard response format)
+    const debriefResponse = await callAI(settings, '', buildPostCallDebriefMessage(
+      transcript, candidateCtx, liveTopics?.covered, liveTopics?.pending, originalAnalysis));
+    const debrief = parseAnalysisResponse(debriefResponse);
+    // parseAnalysisResponse falls back to defaults on malformed JSON — only
+    // trust the verdict if the response really contained one
+    const verdictIsReal = /"match_pct"\s*:/.test(debriefResponse);
+    const debriefSection = `\n\n---\n\n## 📞 Phone Screen Debrief — ${dateStr}\n\n` +
+      (verdictIsReal ? `**Post-call verdict: ${debrief.verdict} (${debrief.matchPct}%)** — ${debrief.summary}\n\n` : '') +
+      (debrief.fullAnalysis || '');
+
+    // Call 2 — candidate write-up dossier (hidden system prompt)
+    let writeupSection = '';
+    try {
+      const writeup = await callAI(settings, WRITEUP_SYSTEM_PROMPT, buildWriteupMessage(transcript, candidateCtx));
+      writeupSection = `\n\n---\n\n## 📋 Candidate Write-Up — ${dateStr}\n\n${writeup.trim()}`;
+    } catch (err) {
+      console.error('[bg] write-up error:', err);
+    }
+
+    await updateCandidateRecords(url, (rec) => {
+      rec.fullAnalysis = (rec.fullAnalysis || '') + debriefSection + writeupSection;
+      if (verdictIsReal) {
+        rec.matchPct = debrief.matchPct;
+        rec.verdict  = debrief.verdict;
+        rec.summary  = debrief.summary;
+        rec.postCall = true;
+      }
+    });
+    notify('summary_done');
+  } catch (err) {
+    console.error('[bg] post-call summary error:', err);
+    notify('summary_error');
+  }
+}
+
+async function getStoredFullAnalysis(url) {
+  if (!url) return '';
+  const cached = (await chrome.storage.local.get(`urlcache_${url}`))[`urlcache_${url}`];
+  if (cached?.fullAnalysis) return cached.fullAnalysis;
+  const { projects = [] } = await chrome.storage.local.get('projects');
+  for (const proj of projects) {
+    const cand = (proj.candidates || []).find(c => c.url === url);
+    if (cand?.fullAnalysis) return cand.fullAnalysis;
+  }
+  return '';
+}
+
+// Applies a mutation to every record of the candidate: project entries + URL cache
+async function updateCandidateRecords(url, mutate) {
+  if (!url) return;
+  const { projects = [] } = await chrome.storage.local.get('projects');
+  let touched = false;
+  for (const proj of projects) {
+    for (const cand of (proj.candidates || [])) {
+      if (cand.url === url) { mutate(cand); touched = true; }
+    }
+  }
+  if (touched) await chrome.storage.local.set({ projects });
+
+  const urlKey = `urlcache_${url}`;
+  const cached = (await chrome.storage.local.get(urlKey))[urlKey];
+  if (cached) {
+    mutate(cached);
+    await chrome.storage.local.set({ [urlKey]: cached });
+  }
 }
 
 async function triggerLiveSuggestion(pendingTopics, candidateCtx, tabId) {
@@ -95,6 +212,9 @@ async function triggerLiveSuggestion(pendingTopics, candidateCtx, tabId) {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'LIVE_TRANSCRIPT_CHUNK') {
     appendLiveTranscript('recruiter', msg.transcript);
+    chrome.storage.session.set({
+      liveTopics: { pending: msg.pendingTopics || [], covered: msg.coveredTopics || [] },
+    }).catch(() => {});
     triggerLiveSuggestion(msg.pendingTopics, msg.candidateCtx, sender.tab?.id);
     return false;
   }

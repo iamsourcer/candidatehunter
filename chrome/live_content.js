@@ -120,12 +120,13 @@
         transcriptBuffer = '';
         interimBuffer = '';
         wordCount = 0;
-        if (candidateCtx && pendingTopics.length) {
+        if (candidateCtx) {
           setStatus('⏳ updating…', true);
           chrome.runtime.sendMessage({
             type: 'LIVE_TRANSCRIPT_CHUNK',
             transcript: text,
             pendingTopics: [...pendingTopics],
+            coveredTopics: [...coveredTopics],
             candidateCtx,
           }).catch(e => console.warn('[CH] sendMessage error:', e));
         }
@@ -231,12 +232,13 @@
     const chunk = transcriptBuffer.trim();
     transcriptBuffer = '';
     wordCount = 0;
-    if (!chunk || !candidateCtx || !pendingTopics.length) return;
+    if (!chunk || !candidateCtx) return;
     setStatus('⏳ updating…', true);
     chrome.runtime.sendMessage({
       type: 'LIVE_TRANSCRIPT_CHUNK',
       transcript: chunk,
       pendingTopics: [...pendingTopics],
+      coveredTopics: [...coveredTopics],
       candidateCtx,
     }).catch(e => console.warn('[CH] sendMessage error:', e));
   }
@@ -256,7 +258,21 @@
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'LIVE_STATUS') {
-      if (msg.status === 'candidate_error') setStatus('⚠ Deepgram: ' + msg.message, false);
+      if (msg.status === 'candidate_error') { setStatus('⚠ Deepgram: ' + msg.message, false); return; }
+      // Post-call summary states arrive after deactivation — re-expand to show them
+      if (msg.status === 'summary_generating') {
+        if (sidebar) { expandSidebar(); setStatus('📝 Generating call notes…', true); setSuggestion('Writing post-call notes…'); }
+      } else if (msg.status === 'summary_done') {
+        if (sidebar) {
+          setStatus('✓ Notes attached to analysis', false);
+          setSuggestion('Open the candidate in Projects → Full Analysis to read them.');
+          setTimeout(collapseSidebar, 6000);
+        }
+      } else if (msg.status === 'summary_skipped') {
+        if (sidebar) { setStatus('', false); collapseSidebar(); }
+      } else if (msg.status === 'summary_error') {
+        if (sidebar) { expandSidebar(); setStatus('⚠ Could not generate call notes', false); }
+      }
       return;
     }
     if (msg.type !== 'LIVE_SUGGESTION') return;

@@ -660,6 +660,7 @@ async function initLivePanel(tab) {
 
     const candidateCtx = {
       name:        cand.name,
+      url:         cand.url,
       verdict:     cand.verdict,
       matchPct:    cand.matchPct,
       highlights:  cached?.highlights || null,
@@ -689,6 +690,12 @@ function buildTopicsFromCandidate(cand, cached) {
   const topics = ['Opening / company pitch'];
   const neg = cached?.highlights?.negative || [];
   for (const n of neg.slice(0, 3)) topics.push('Probe: ' + n);
+  // Proving questions from the candidate's full analysis (Phone Screen Script)
+  const full = cand.fullAnalysis || cached?.fullAnalysis || '';
+  const questions = full.split('\n')
+    .map(l => l.replace(/^[\s\d.\-*•>]+/, '').trim())
+    .filter(l => l.endsWith('?') && l.length >= 20 && l.length <= 160);
+  for (const q of questions.slice(0, 3)) topics.push(q);
   topics.push('Net-new quota history');
   topics.push('Comp expectations');
   return topics;
