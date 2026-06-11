@@ -577,7 +577,7 @@ function renderRoleList(configs) {
   list.innerHTML = configs.map(r => `
     <div class="role-item" data-id="${r.id}">
       <span class="role-item-name">${escHtml(r.name)}</span>
-      ${r.isActive ? '<span class="role-active-badge">Active</span>' : ''}
+      ${r.isActive ? '<span class="role-active-badge">Active</span><button class="role-item-btn deactivate" data-id="' + r.id + '">Deactivate</button>' : ''}
       ${!r.isActive ? `<button class="role-item-btn set-active" data-id="${r.id}">Set Active</button>` : ''}
       <button class="role-item-btn" data-edit="${r.id}">Edit</button>
       <button class="role-item-btn danger" data-delete="${r.id}">Delete</button>
@@ -592,6 +592,9 @@ function renderRoleList(configs) {
   });
   list.querySelectorAll('.set-active').forEach(btn => {
     btn.addEventListener('click', () => setActiveRole(btn.dataset.id));
+  });
+  list.querySelectorAll('.deactivate').forEach(btn => {
+    btn.addEventListener('click', () => deactivateRole());
   });
 }
 
@@ -698,7 +701,6 @@ async function deleteRole(roleId) {
   const role = roleConfigs.find(r => r.id === roleId);
   if (!confirm(`Delete role "${role?.name}"?`)) return;
   const updated = roleConfigs.filter(r => r.id !== roleId);
-  if (updated.length && !updated.some(r => r.isActive)) updated[0].isActive = true;
   await chrome.storage.local.set({ roleConfigs: updated });
   renderRoleList(updated);
 }
@@ -710,6 +712,15 @@ async function setActiveRole(roleId) {
   await chrome.storage.local.set({ roleConfigs });
   renderRoleList(roleConfigs);
   flash('Active role updated ✓ (analysis cache cleared)', '');
+}
+
+async function deactivateRole() {
+  const { roleConfigs = [] } = await chrome.storage.local.get('roleConfigs');
+  roleConfigs.forEach(r => { r.isActive = false; });
+  await clearUrlCache();
+  await chrome.storage.local.set({ roleConfigs });
+  renderRoleList(roleConfigs);
+  flash('Role deactivated ✓', '');
 }
 
 async function clearUrlCache() {
