@@ -123,9 +123,75 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
     return false;
   }
+  if (msg.type === 'ANALYZE_NOW') {
+    const { tabId, cleanUrl, userMessage, candidateName, profileData, ashbyLinkedInUrl, isAshby } = msg;
+    runAnalysisFromExtracted(tabId, cleanUrl, userMessage, candidateName, profileData, ashbyLinkedInUrl, isAshby)
+      .then(() => sendResponse({ ok: true }))
+      .catch(e => sendResponse({ error: e.message }));
+    return true;
+  }
 });
 
 const ASHBY_CANDIDATE_RE = /app\.ashbyhq\.com\/.*\/candidates\/[^/?#]+/;
+
+// ── Manual analysis delegated from popup ─────────────────────────────────────
+async function runAnalysisFromExtracted(tabId, cleanUrl, userMessage, candidateName, profileData, ashbyLinkedInUrl, isAshby) {
+  chrome.action.setBadgeText({ tabId, text: '...' });
+  chrome.action.setBadgeBackgroundColor({ tabId, color: '#888888' });
+  await chrome.storage.local.set({ [`analyzing_${tabId}`]: true });
+
+  try {
+    const settings = await loadSettings();
+    if (!getActiveKey(settings)) { chrome.action.setBadgeText({ tabId, text: '' }); return; }
+
+    const urlKey = `urlcache_${cleanUrl}`;
+    const activeSystemPrompt = await getActiveSystemPrompt();
+    const responseText = await callAI(settings, activeSystemPrompt, userMessage, { includeHighlights: true });
+    let result = parseAnalysisResponse(responseText);
+
+    if (isAshby && ashbyLinkedInUrl) {
+      try {
+        const liData = await extractLinkedInFromUrl(ashbyLinkedInUrl);
+        if (liData) {
+          const liResponse = await callAI(settings, activeSystemPrompt, buildUserMessage(liData), { includeHighlights: true });
+          const liResult = parseAnalysisResponse(liResponse);
+          if (liResult.verdict !== result.verdict || result.matchPct < 70) {
+            const synthResponse = await callAI(settings, activeSystemPrompt, buildSynthesisMessage(result, liResult));
+            const synthResult = parseAnalysisResponse(synthResponse);
+            result = { ...synthResult, highlights: synthResult.highlights || liResult.highlights || null };
+          } else {
+            result = liResult;
+          }
+          if (liData.profile?.name) candidateName = liData.profile.name;
+        }
+      } catch (_) {}
+    }
+
+    const { matchPct, verdict, summary, fullAnalysis, highlights, suggestTerms } = result;
+    const tabEntry = { matchPct, verdict, summary, candidateName, highlights, suggestTerms };
+    const toStore = {
+      [`analysis_${tabId}`]: tabEntry,
+      [urlKey]: { ...tabEntry, fullAnalysis, timestamp: Date.now() },
+      lastAnalysis: fullAnalysis, lastCandidateName: candidateName,
+      lastVerdict: verdict, lastMatch: matchPct,
+      lastSuggestTerms: suggestTerms || [], lastHighlights: highlights || null,
+      lastProfile: profileData || null,
+    };
+    if (ashbyLinkedInUrl) toStore[`ashby_li_${tabId}`] = ashbyLinkedInUrl;
+    await chrome.storage.local.set(toStore);
+
+    const badgeColor = verdict === 'ADVANCE' ? '#057642' : verdict === 'HOLD' ? '#c07800' : verdict === 'LONG SHOT' ? '#d4500a' : '#c0392b';
+    chrome.action.setBadgeText({ tabId, text: `${matchPct}%` });
+    chrome.action.setBadgeBackgroundColor({ tabId, color: badgeColor });
+  } catch (err) {
+    console.error('[bg] manual analysis error:', err);
+    chrome.action.setBadgeText({ tabId, text: 'ERR' });
+    chrome.action.setBadgeBackgroundColor({ tabId, color: '#888888' });
+    throw err;
+  } finally {
+    await chrome.storage.local.remove(`analyzing_${tabId}`);
+  }
+}
 
 // ── Clear badge when navigating away ─────────────────────────────────────────
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
@@ -346,74 +412,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 chrome.tabs.onRemoved.addListener((tabId) => {
   chrome.storage.local.remove([`analysis_${tabId}`, `analyzing_${tabId}`, `ashby_li_${tabId}`]);
 });
-
-// ── Manual analysis delegated from popup ─────────────────────────────────────
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg.type !== 'ANALYZE_NOW') return false;
-  const { tabId, cleanUrl, userMessage, candidateName, profileData, ashbyLinkedInUrl, isAshby } = msg;
-  runAnalysisFromExtracted(tabId, cleanUrl, userMessage, candidateName, profileData, ashbyLinkedInUrl, isAshby)
-    .then(() => sendResponse({ ok: true }))
-    .catch(e => sendResponse({ error: e.message }));
-  return true;
-});
-
-async function runAnalysisFromExtracted(tabId, cleanUrl, userMessage, candidateName, profileData, ashbyLinkedInUrl, isAshby) {
-  chrome.action.setBadgeText({ tabId, text: '...' });
-  chrome.action.setBadgeBackgroundColor({ tabId, color: '#888888' });
-  await chrome.storage.local.set({ [`analyzing_${tabId}`]: true });
-
-  try {
-    const settings = await loadSettings();
-    if (!getActiveKey(settings)) { chrome.action.setBadgeText({ tabId, text: '' }); return; }
-
-    const urlKey = `urlcache_${cleanUrl}`;
-    const activeSystemPrompt = await getActiveSystemPrompt();
-    const responseText = await callAI(settings, activeSystemPrompt, userMessage, { includeHighlights: true });
-    let result = parseAnalysisResponse(responseText);
-
-    if (isAshby && ashbyLinkedInUrl) {
-      try {
-        const liData = await extractLinkedInFromUrl(ashbyLinkedInUrl);
-        if (liData) {
-          const liResponse = await callAI(settings, activeSystemPrompt, buildUserMessage(liData), { includeHighlights: true });
-          const liResult = parseAnalysisResponse(liResponse);
-          if (liResult.verdict !== result.verdict || result.matchPct < 70) {
-            const synthResponse = await callAI(settings, activeSystemPrompt, buildSynthesisMessage(result, liResult));
-            const synthResult = parseAnalysisResponse(synthResponse);
-            result = { ...synthResult, highlights: synthResult.highlights || liResult.highlights || null };
-          } else {
-            result = liResult;
-          }
-          if (liData.profile?.name) candidateName = liData.profile.name;
-        }
-      } catch (_) {}
-    }
-
-    const { matchPct, verdict, summary, fullAnalysis, highlights, suggestTerms } = result;
-    const tabEntry = { matchPct, verdict, summary, candidateName, highlights, suggestTerms };
-    const toStore = {
-      [`analysis_${tabId}`]: tabEntry,
-      [urlKey]: { ...tabEntry, fullAnalysis, timestamp: Date.now() },
-      lastAnalysis: fullAnalysis, lastCandidateName: candidateName,
-      lastVerdict: verdict, lastMatch: matchPct,
-      lastSuggestTerms: suggestTerms || [], lastHighlights: highlights || null,
-      lastProfile: profileData || null,
-    };
-    if (ashbyLinkedInUrl) toStore[`ashby_li_${tabId}`] = ashbyLinkedInUrl;
-    await chrome.storage.local.set(toStore);
-
-    const badgeColor = verdict === 'ADVANCE' ? '#057642' : verdict === 'HOLD' ? '#c07800' : verdict === 'LONG SHOT' ? '#d4500a' : '#c0392b';
-    chrome.action.setBadgeText({ tabId, text: `${matchPct}%` });
-    chrome.action.setBadgeBackgroundColor({ tabId, color: badgeColor });
-  } catch (err) {
-    console.error('[bg] manual analysis error:', err);
-    chrome.action.setBadgeText({ tabId, text: 'ERR' });
-    chrome.action.setBadgeBackgroundColor({ tabId, color: '#888888' });
-    throw err;
-  } finally {
-    await chrome.storage.local.remove(`analyzing_${tabId}`);
-  }
-}
 
 // ── DOM polling helpers ───────────────────────────────────────────────────────
 async function waitForProfileDOM(tabId, maxMs = 8000) {
