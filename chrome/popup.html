@@ -69,10 +69,12 @@
       transition: background-color 0.2s;
       margin-bottom: 6px;
     }
-    #projects-btn { background-color: #555; }
-    #projects-btn:hover:not(:disabled) { background-color: #333; }
-    #ashby-btn    { background-color: #7c3aed; display: none; }
-    #ashby-btn:hover:not(:disabled)    { background-color: #6d28d9; }
+    #projects-btn  { background-color: #555; }
+    #projects-btn:hover:not(:disabled)  { background-color: #333; }
+    #ashby-btn     { background-color: #7c3aed; display: none; }
+    #ashby-btn:hover:not(:disabled)     { background-color: #6d28d9; }
+    #sourcing-btn  { background-color: #0073b1; }
+    #sourcing-btn:hover:not(:disabled)  { background-color: #005f94; }
     #analyze-btn  { background-color: #1a1a2e; }
     #analyze-btn:hover:not(:disabled)  { background-color: #16213e; }
     .action-btn:disabled { cursor: default; opacity: 0.72; }
@@ -294,6 +296,7 @@
 
   <button id="projects-btn" class="action-btn">📋 Projects</button>
   <button id="ashby-btn"    class="action-btn">🏢 Ashby</button>
+  <button id="sourcing-btn" class="action-btn">🔍 Sourcing Advisor</button>
 
   <hr class="divider">
 
@@ -337,6 +340,11 @@
   <button id="analyze-btn" class="action-btn">Run Analysis</button>
   <div id="ashby-hint" style="display:none; margin:6px 0 0; padding:7px 10px; border-radius:4px; font-size:11px; line-height:1.5; text-align:left; border:1px solid #f0c060; background:#fffbf0; color:#92600a;">
     <strong id="ashby-hint-icon">⚠</strong> <span id="ashby-hint-text">Select the resume text on the page before analyzing — Ashby exposes limited data otherwise.</span>
+  </div>
+  <div id="li-url-row" style="display:none; margin:6px 0 0;">
+    <input id="li-url-input" type="url"
+      placeholder="LinkedIn URL for cross-reference (optional)…"
+      style="width:100%; box-sizing:border-box; font-size:11px; padding:5px 8px; border:1px solid #ccc; border-radius:4px; color:#333; font-family:inherit;">
   </div>
 
   <div id="reanalyze-row">

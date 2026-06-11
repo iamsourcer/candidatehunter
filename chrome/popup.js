@@ -63,6 +63,10 @@ document.getElementById('ashby-btn')?.addEventListener('click', () => {
   chrome.tabs.create({ url: chrome.runtime.getURL('ashby.html') });
 });
 
+document.getElementById('sourcing-btn')?.addEventListener('click', () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('sourcing.html') });
+});
+
 // ── Analyze Candidate ─────────────────────────────────────────────────────────
 document.getElementById('full-analysis-btn').addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -178,6 +182,10 @@ async function analyzeCandidate() {
       userMessage      = buildAshbyUserMessage(ashbyData);
       candidateName    = ashbyData.name || 'Candidate';
       ashbyLinkedInUrl = ashbyData.linkedInUrl || null;
+      if (!ashbyLinkedInUrl) {
+        const manual = document.getElementById('li-url-input')?.value?.trim();
+        if (manual && manual.includes('linkedin.com/in/')) ashbyLinkedInUrl = manual;
+      }
       lastProfileData  = ashbyData;
       if (ashbyLinkedInUrl) {
         extraStorage[`ashby_li_${tab.id}`] = ashbyLinkedInUrl;
@@ -435,7 +443,7 @@ function extractFromTab(url, extractFn) {
 }
 
 const ASHBY_CANDIDATE_RE = /app\.ashbyhq\.com\/.*\/candidates\/[^/?#]+/;
-const LIVE_URL_RE = /^https:\/\/(meet\.google\.com|voice\.google\.com)\//;
+const LIVE_URL_RE        = /^https:\/\/(meet\.google\.com|voice\.google\.com)\//;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 (async () => {
@@ -458,9 +466,9 @@ const LIVE_URL_RE = /^https:\/\/(meet\.google\.com|voice\.google\.com)\//;
 
   const url      = tab?.url || '';
   const cleanUrl = url.split('?')[0];
-  const isLI     = url.includes('linkedin.com/in/');
-  const isAshby  = ASHBY_CANDIDATE_RE.test(cleanUrl);
-  const isLive   = LIVE_URL_RE.test(url);
+  const isLI    = url.includes('linkedin.com/in/');
+  const isAshby = ASHBY_CANDIDATE_RE.test(cleanUrl);
+  const isLive  = LIVE_URL_RE.test(url);
 
   if (isLive) {
     initLivePanel(tab);
@@ -512,10 +520,12 @@ const LIVE_URL_RE = /^https:\/\/(meet\.google\.com|voice\.google\.com)\//;
   const inFlight = (await chrome.storage.local.get(`analyzing_${tab.id}`))[`analyzing_${tab.id}`];
   if (inFlight) { showAnalyzingSpinner(tab.id); return; }
 
-  // 4. On Ashby with no result: show usage hint
+  // 4. On Ashby with no result: show usage hint + LinkedIn URL input
   if (isAshby) {
     const hint = document.getElementById('ashby-hint');
     if (hint) hint.style.display = 'block';
+    const liUrlRow = document.getElementById('li-url-row');
+    if (liUrlRow) liUrlRow.style.display = 'block';
   }
 })();
 
@@ -704,8 +714,8 @@ function showAnalyzingSpinner(tabId) {
       area.className = '';
       const c = changes[`analysis_${tabId}`].newValue;
       showAnalysisResult(c.matchPct, c.verdict, c.summary);
-      if (isLI) handleHighlights(tabId, c.highlights || null);
-      if (isAshby) showLinkedInLink(tabId);
+      if (currentPageType === 'linkedin') handleHighlights(tabId, c.highlights || null);
+      if (currentPageType === 'ashby') showLinkedInLink(tabId);
     }
   });
 }
