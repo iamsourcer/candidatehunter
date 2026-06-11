@@ -5,3 +5,7 @@ Thumbs.db
 *.xpi
 output_test.json
 node_modules/
+
+# private — never publish on Pages
+pi/
+branding/

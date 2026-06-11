@@ -18,8 +18,8 @@
   let dragOffX = 0, dragOffY = 0;
   let flushTimer = null;
 
-  const CHUNK_WORDS = 40;
-  const FLUSH_INTERVAL_MS = 20000;
+  const CHUNK_WORDS = 15;
+  const FLUSH_INTERVAL_MS = 8000;
 
   // ── DOM helpers ───────────────────────────────────────────────────────────────
 
@@ -233,7 +233,9 @@
     transcriptBuffer = '';
     wordCount = 0;
     if (!chunk || !candidateCtx) return;
+    if (chunk.split(/\s+/).length < 5) return; // ignore very short fragments
     setStatus('⏳ updating…', true);
+    setSuggestion('…');
     chrome.runtime.sendMessage({
       type: 'LIVE_TRANSCRIPT_CHUNK',
       transcript: chunk,
