@@ -135,9 +135,8 @@ Scan the candidate's work history for any gap of 3 months or longer
 between roles. For each gap found:
 - Note the approximate duration and the period it covers
 - Do not treat it as a negative signal
-- Add one targeted question to OUTPUT 2 under "Gap and Red Flag Questions"
-  framed as: "I noticed a gap between [Role A] and [Role B] — can you
-  walk me through what you were focused on during that period?"
+- Add one question to OUTPUT 2 probing the gap:
+  "I noticed a gap between [Role A] and [Role B] — what were you focused on during that period?"
 - If no gaps are found, state: \`[TENURE] No significant gaps detected.\`
 
 **Check 2 — Overqualification signals:**
@@ -162,12 +161,7 @@ Do not penalize the score. Do flag in Output 3 under Unverified Claims.
 
 **Overall Match Percentage:** [X]%
 
-**Scoring breakdown (show all working):**
-- Tier 1 requirements met: [X] of [Y] — [points earned] of 40
-- Tier 2 requirements met: [X] of [Y] — [points earned] of 30
-- Tier 3 fit signals present: [X] of [Y] — [points earned] of 20
-- Tier 4 bonuses: [points earned] of 10
-- Total: [X] / 100
+**Why this score:** [One sentence: the top reason the score is as high or low as it is — name a specific requirement met or missed]
 
 **Verdict:**
 Apply the following thresholds strictly:
@@ -203,65 +197,30 @@ specific evidence of requirement coverage instead.
 
 **Recruiter Opening (recruiter speaks first — ~30 seconds, no questions yet):**
 
-Write a 4-5 sentence script the recruiter reads verbatim. Sentence
-structure is FIXED — follow this order exactly:
+Write a natural 3-4 sentence opening the recruiter reads verbatim. Write
+it as one flowing paragraph — no labels, no sentence numbers.
 
-**S1 — Greeting (no filler):**
-"Hi [Candidate first name], I'm [Name] recruiting for {{COMPANY_NAME}} —
-thanks for making time."
+Include in order:
+1. Greeting with the candidate's first name and {{COMPANY_NAME}} — no filler phrases
+2. What {{COMPANY_NAME}} does and its commercial model in 1-2 tight sentences — no buzzwords
+3. ONE concrete hook tied to a specific company, role, or achievement from the candidate's
+   actual profile — use their first name, make it traceable, not generic
+4. A brief agenda setter letting them know you'll share context first, then a few questions
 
-**S2-S3 — Company positioning (from Section A):**
-What {{COMPANY_NAME}} does and the commercial model in 2 tight sentences.
-No buzzwords. No generic descriptors.
+BANNED from the opening: fast-paced, collaborative, strong communication,
+detail-oriented, team player, passionate, hard-working, dynamic,
+results-driven, innovative, or any phrase that applies to any candidate
+at any company.
 
-**S4 — Candidate-specific hook (MANDATORY — most critical sentence):**
-Name ONE concrete detail from the candidate's actual profile that is
-directly relevant to this role. Must be traceable to a specific company,
-role title, or achievement in their experience — never a generic skill.
-Use their first name in this sentence.
-Strong pattern: "[Name], your time at [Company] doing [specific thing]
-is exactly the kind of background this engagement needs."
-If no strong signal exists, name the hypothesis directly:
-"[Name], we want to test whether your background at [Company] —
-specifically [specific aspect] — maps to what we're building here."
+**Questions (5-8 total):**
+Cover Tier 1 requirements, employer model transferability, and flagged gaps — all in one
+unified flow. Order them naturally, not by category.
 
-**S5 — Agenda setter:**
-"I want to give you the full picture first, then I have a few direct
-questions about your background, and of course leave time for yours.
-Sound good?"
-
-BANNED from the opening paragraph: fast-paced, collaborative, strong
-communication, detail-oriented, team player, passionate, hard-working,
-dynamic, results-driven, innovative, or any phrase that applies to any
-candidate at any company.
-
-If the candidate interrupts before S5: "Absolutely — give me 20 more
-seconds and then it's all yours."
-
-**Core Proving Questions:**
-Generate one question per Tier 1 requirement from Section B.
-Each question must:
-- Reference the specific skill or requirement by name
-- Ask for a concrete example
-- Be conversational in tone
-
-**Employer Context Questions:**
-For each [ADJACENT] or [DIVERGENT] employer identified in Section C,
-generate one question exploring transferability:
-"Your time at [Company] looks like it was more of a [model type]
-environment — how did that shape the way you approach [relevant skill]?"
-
-**Gap and Red Flag Questions:**
-Generate one question per item flagged under:
-- Hard gaps from OUTPUT 1
-- Pressure test areas from OUTPUT 1
-- Tenure gaps from Pre-Evaluation Check 1
-- Overqualification signal from Pre-Evaluation Check 2
-
-Each question must:
-- Name the concern directly — do not bury it
-- Give the candidate a fair path to address it
-- Be framed as "help me understand" — never hostile
+Each question must reference a specific detail from the candidate's profile.
+Vary the question opener — no more than TWO questions may start with the same word or phrase.
+"Can you walk me through" may appear at most ONCE.
+Tone: direct and conversational — not hostile, not soft.
+After each question, add a short parenthetical label: (Tier 1: skill name), (employer: Company), or (gap: what's being probed).
 
 **Compensation and Logistics:**
 Close with these two questions verbatim:
@@ -269,32 +228,6 @@ Close with these two questions verbatim:
    flexibility depending on the scope of the role?"
 2. "What does your availability look like, and are there any notice
    period or competing offer constraints we should know about?"
-
----
-
-### OUTPUT 3 — RED FLAG SUMMARY
-
-A concise scannable block for the hiring manager. No prose.
-
-**Verdict line (always first):**
-\`[VERDICT: X] [X]% match. [One sentence stating the single strongest
-reason to advance or the single biggest concern if not.]\`
-
-**Confirmed Gaps**
-Tier 1 requirements with zero evidence in the profile.
-\`[GAP] No evidence of Espresso or UIAutomator experience\`
-
-**Unverified Claims**
-Stated in profile but no supporting detail, outcome, or context given.
-\`[UNVERIFIED] "Led automation strategy" — no team size or outcome stated\`
-
-**Contextual Flags**
-Employer model gaps, pace mismatches, tenure patterns, scope inflation,
-overqualification signals, or incomplete profile fields.
-\`[CONTEXT] All prior roles at product companies — transferability
-to [{{COMPANY_NAME}}'s model] not yet confirmed\`
-\`[TENURE] 8-month gap between Role A and Role B — unexplored\`
-\`[SCOPE] Candidate may exceed role level — growth path discussion needed\`
 
 ---
 
@@ -341,7 +274,7 @@ Output a single JSON object on one line (no line breaks inside):
 
 **Part 2 — Full evaluation:**
 On its own line, output the literal text: ---FULL---
-Then provide OUTPUT 1 (Match Assessment with full scoring breakdown), OUTPUT 2 (Phone Screen Script — only if verdict is ADVANCE), OUTPUT 3 (Red Flag Summary).
+Then provide OUTPUT 1 (Match Assessment) and OUTPUT 2 (Phone Screen Script — only if verdict is ADVANCE).
 
 Do NOT output any text before the JSON line. The JSON digest is required in every response and must appear as the very first line.`;
 
@@ -644,7 +577,7 @@ function renderRoleList(configs) {
   list.innerHTML = configs.map(r => `
     <div class="role-item" data-id="${r.id}">
       <span class="role-item-name">${escHtml(r.name)}</span>
-      ${r.isActive ? '<span class="role-active-badge">Active</span>' : ''}
+      ${r.isActive ? '<span class="role-active-badge">Active</span><button class="role-item-btn deactivate" data-id="' + r.id + '">Deactivate</button>' : ''}
       ${!r.isActive ? `<button class="role-item-btn set-active" data-id="${r.id}">Set Active</button>` : ''}
       <button class="role-item-btn" data-edit="${r.id}">Edit</button>
       <button class="role-item-btn danger" data-delete="${r.id}">Delete</button>
@@ -659,6 +592,9 @@ function renderRoleList(configs) {
   });
   list.querySelectorAll('.set-active').forEach(btn => {
     btn.addEventListener('click', () => setActiveRole(btn.dataset.id));
+  });
+  list.querySelectorAll('.deactivate').forEach(btn => {
+    btn.addEventListener('click', () => deactivateRole());
   });
 }
 
@@ -765,7 +701,6 @@ async function deleteRole(roleId) {
   const role = roleConfigs.find(r => r.id === roleId);
   if (!confirm(`Delete role "${role?.name}"?`)) return;
   const updated = roleConfigs.filter(r => r.id !== roleId);
-  if (updated.length && !updated.some(r => r.isActive)) updated[0].isActive = true;
   await chrome.storage.local.set({ roleConfigs: updated });
   renderRoleList(updated);
 }
@@ -777,6 +712,15 @@ async function setActiveRole(roleId) {
   await chrome.storage.local.set({ roleConfigs });
   renderRoleList(roleConfigs);
   flash('Active role updated ✓ (analysis cache cleared)', '');
+}
+
+async function deactivateRole() {
+  const { roleConfigs = [] } = await chrome.storage.local.get('roleConfigs');
+  roleConfigs.forEach(r => { r.isActive = false; });
+  await clearUrlCache();
+  await chrome.storage.local.set({ roleConfigs });
+  renderRoleList(roleConfigs);
+  flash('Role deactivated ✓', '');
 }
 
 async function clearUrlCache() {

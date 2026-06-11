@@ -379,6 +379,29 @@ export function extractLinkedInFromUrl(url) {
   });
 }
 
+export function buildSourcingMessage(jd, companyCtx, refinement) {
+  return [
+    'You are a technical sourcing strategist. Generate a sourcing package for the role below.',
+    '',
+    'Company context:',
+    companyCtx || '(not provided)',
+    '',
+    'Job description:',
+    jd || '(not provided)',
+    refinement ? `\nFocus especially on: ${refinement}` : '',
+    '',
+    'Return a JSON object only (no markdown, no other text):',
+    '{"boolean_string": "(\"term1\" OR \"term2\" OR ...)",',
+    ' "terminology": {"basic": ["term",...], "deep": ["term",...], "expert": ["term",...]},',
+    ' "differentiating_questions": [{"question": "...", "why": "what this reveals about real experience"}]}',
+    'boolean_string: ready-to-paste LinkedIn Recruiter / ATS search string, 12-20 terms.',
+    'terminology.basic: 4-6 terms any candidate in this space should know.',
+    'terminology.deep: 4-6 terms that distinguish practitioners from generalists.',
+    'terminology.expert: 3-5 terms tied to high scale / production / enterprise-grade experience.',
+    'differentiating_questions: exactly 3 questions that expose real vs. theoretical experience.',
+  ].join('\n');
+}
+
 // Injected into LinkedIn experience tab via chrome.scripting — must remain self-contained
 export function extractExperienceFunc() {
   const noise  = /^experience$|^experiencia$|^show all$|^ver todo$|^ver más$|^… more$|enhance with ai|\slogo$|^show less$/i;

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Sourcing Advisor — CandidateHunter</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      width: 640px;
+      margin: 0 auto;
+      padding: 24px 20px 40px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      color: #1a1a1a;
+      background: #f7f8fa;
+    }
+    h1 {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 0 0 4px;
+      color: #1a1a2e;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: #888;
+      margin: 0 0 20px;
+    }
+    .role-badge {
+      display: inline-block;
+      background: #e8f4fd;
+      color: #0073b1;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+    }
+    #generate-btn {
+      background: #0073b1;
+      color: white;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 5px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+      display: none;
+      margin-bottom: 16px;
+    }
+    #generate-btn:hover:not(:disabled) { background: #005f94; }
+    #generate-btn:disabled { opacity: 0.6; cursor: default; }
+    #regenerate-link {
+      font-size: 12px;
+      color: #aaa;
+      text-decoration: none;
+      display: none;
+      margin-bottom: 16px;
+      display: none;
+    }
+    #regenerate-link:hover { color: #555; text-decoration: underline; }
+
+    #no-role-msg {
+      display: none;
+      padding: 16px;
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      color: #7a5800;
+    }
+    #no-role-msg a { color: #0073b1; }
+
+    #status {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 12px;
+      min-height: 18px;
+    }
+    #status.error { color: #c0392b; }
+
+    .card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #555;
+    }
+    .copy-btn {
+      background: none;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 3px 9px;
+      font-size: 11px;
+      cursor: pointer;
+      color: #555;
+      transition: background 0.1s, color 0.1s;
+    }
+    .copy-btn:hover { background: #f0f0f0; }
+    .copy-btn.copied { border-color: #057642; color: #057642; }
+
+    #boolean-string {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #1a1a1a;
+      word-break: break-word;
+    }
+
+    .term-group { margin-bottom: 8px; }
+    .term-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #888;
+      margin-bottom: 3px;
+    }
+    .term-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+    .term-pill {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .term-pill.basic  { background: #eef6fb; color: #0073b1; border: 1px solid #b3d9f0; }
+    .term-pill.deep   { background: #f0f0ff; color: #4a4aaa; border: 1px solid #c0c0ee; }
+    .term-pill.expert { background: #fff0e8; color: #c05010; border: 1px solid #e8c0a0; }
+
+    .question-item {
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .question-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .question-text {
+      font-size: 13px;
+      color: #1a1a1a;
+      line-height: 1.5;
+      margin-bottom: 3px;
+    }
+    .question-why {
+      font-size: 11px;
+      color: #888;
+      font-style: italic;
+    }
+
+    #results { display: none; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Sourcing Advisor</h1>
+  <p class="subtitle">Generate a Boolean string, terminology map, and differentiating questions for your active role.</p>
+
+  <div id="no-role-msg" style="display:none">
+    No active role configured. <a id="options-link" href="#">Open Options →</a>
+  </div>
+
+  <textarea id="ad-hoc-jd" style="display:none; width:100%; height:120px; font-size:12px;
+    padding:8px; border:1px solid #ccc; border-radius:4px; font-family:inherit; resize:vertical;
+    margin-bottom:12px;" placeholder="Describe the role you're sourcing for: responsibilities, must-haves, company type…"></textarea>
+
+  <div id="role-badge-wrap" style="display:none">
+    <span class="role-badge" id="role-badge"></span>
+  </div>
+
+  <button id="generate-btn">Generate</button>
+  <a id="regenerate-link" href="#">↺ Regenerate</a>
+
+  <div id="status"></div>
+
+  <div id="results">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Boolean String</span>
+        <button class="copy-btn" id="copy-boolean">📋 Copy</button>
+      </div>
+      <div id="boolean-string"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Terminology Map</span>
+        <button class="copy-btn" id="copy-terms">📋 Copy</button>
+      </div>
+      <div id="terminology">
+        <div class="term-group">
+          <div class="term-label">Basic — must know</div>
+          <div class="term-pills" id="terms-basic"></div>
+        </div>
+        <div class="term-group">
+          <div class="term-label">Deep — separates practitioners</div>
+          <div class="term-pills" id="terms-deep"></div>
+        </div>
+        <div class="term-group" style="margin-bottom:0">
+          <div class="term-label">Expert — high scale / enterprise</div>
+          <div class="term-pills" id="terms-expert"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Differentiating Questions</span>
+        <button class="copy-btn" id="copy-questions">📋 Copy</button>
+      </div>
+      <div id="questions"></div>
+    </div>
+  </div>
+
+  <script type="module" src="sourcing.js"></script>
+</body>
+</html>
